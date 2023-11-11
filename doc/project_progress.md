@@ -1,6 +1,9 @@
 ## Requirements: 
 What does the app need to do? What problem is it solving?
 
+1. Upload input files using UI
+2. Chose organism to match DNA
+
 ## Frameworks: 
 ### Language:
 Python
