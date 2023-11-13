@@ -7,8 +7,14 @@ with st.form(key='my_form'):
         'Choose an organism:',
         ('Human', 'E-Coli')
     )
-    uploaded_file = st.file_uploader("Upload your fasta file here:", type=['fasta'])
+    fasta_file = st.file_uploader("Upload your fasta file here:", type=['fasta'])
     temp_range = st.slider('DNA Melting Temperature', min_value=50, max_value=100, value=(60, 90))
     oligo_length_range = st.slider('Oligonucleotide Length', min_value=30, max_value=2000, value=(60, 90))
     cost_per_base = st.number_input('Cost per Base', min_value=0.01, max_value=1.0, value=0.1, step=0.01)
-    submit_button = st.form_submit_button(label='Submit')
+    submit = st.form_submit_button(label='Submit')
+
+if submit:
+    if fasta_file is None:
+        st.warning("Please upload a file!")
+    else:
+        st.success('File successfully uploaded and processed.')
