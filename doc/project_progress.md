@@ -21,8 +21,12 @@ into shareable web apps quickly. You can build interactive and customizable
 dashboards with just a few lines of code.
 
 
-## Basic Design: 
-How would it look when it's totally done? What would the UX be like?
+## Basic Design Decisions: 
+
+11/13/2023
+I have made a few decisions today in regard to the overall design that I would like to document.
+1. No Database: There is not much writing of data, and the bulk data i.e. the organism data only really needs to be read
+2. Not OOP: The format of this application is a glorified script, and as such, OOP is not the correct paredigm to use.
 
 
 ## Implementation: 
