@@ -3,7 +3,7 @@ def import_organism_decodon_set_files():
     raise NotImplementedError('Importation of organism decodon set files not yet implemented')
 
 
-def read_data_from_organism_decodon_set_file(file):
+def parse_organism_decodon_set_file(file):
 
     organism_file = open(file, "r")
 

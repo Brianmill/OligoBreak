@@ -1,3 +1,9 @@
+
+12/27/2023
+
+Today, I want to set up unit testing for this project. It will make coding much easier long term. However,
+this leads me down the path of how I want to organize my code.  
+
 12/26/2023
 
 I have been away from this project for over a month, and I am having a hard time getting back into the swing
