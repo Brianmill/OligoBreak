@@ -28,10 +28,6 @@ def run_gui():
         if successful_submit:
             st.success('File successfully uploaded and processed.')
 
-
-
-
-
 def main():
     run_gui()
     print("hello World")

@@ -34,3 +34,8 @@ Code it. Stick to the requirements as closely as possible. Resist the urge to ad
 
 ## Review: 
 How did it go? If you did it again would you change something (ex. maybe Mongo wasn't the best, and SQLite would have been better...)?
+
+12/26/2023
+
+I have been away from this project for over a month, and I am having a hard time getting back into the swing
+of things. 
