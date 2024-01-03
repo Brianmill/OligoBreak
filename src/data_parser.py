@@ -1,14 +1,34 @@
-def import_organism_decodon_set_files():
-    organism_decodon_set_files = Path(__file__).parent / 'data' / 'organism_AA_decodon_sets'
-    raise NotImplementedError('Importation of organism decodon set files not yet implemented')
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
+def extract_protein_sequence(protein_seq_file: str):
+    fasta_file = open(protein_seq_file, "r")
+    protein_name = fasta_file.readline().strip()
+    protein_seq = fasta_file.read().strip()
+    fasta_file.close()
 
-def extract_protein_sequence(protein_sequence_file: str, multiple_amino_file: str):
-    raise (NotImplementedError('extract_protein_sequence not yet implemented'))
-
+    record = SeqRecord(
+        Seq(protein_seq),
+        name=protein_name,
+    )
+    return record
 
 def store_protein_sequence(protein_sequence_data) -> str:
-    raise (NotImplementedError('store_protein_sequence not yet implemented'))
+    name = protein_sequence_data.name
+    print(name)
+    sequence = protein_sequence_data.seq
+    print(sequence)
+
+    print(str(name) + '\n' + str(sequence))
+    fasta_string = str(name) + str(sequence)
+    return fasta_string
+
+def extract_multiple_amino_data(multiple_amino_file: str):
+    raise (NotImplementedError('extract_multiple_amino_data not yet implemented'))
+
+
+def store_multiple_amino_data(multiple_amino_data) -> str:
+    raise (NotImplementedError('store_multiple_amino_data not yet implemented'))
 
 
 def extract_organism_codon_frequencies(codon_frequencies_file: str):

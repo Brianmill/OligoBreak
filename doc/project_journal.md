@@ -4,6 +4,18 @@
 Good morning. Today, I will continue the progress I have made from yesterday. I would like to complete step 4 today, and get working
 on step 5.
 
+
+Update 2: 
+
+I have now finished writing the unit test for all the sequence information given by the user. The Unit Test successfully
+fails. It is now time to implement all the functions needed to get the Unit Test working. That means I finally need to 
+decde on the data structure of the data once it has been created. I know that I had indicated that I do not want to use
+OOP in this project. I believe that this was a wrong decision. The classes can be relatively basic, but I think that they
+are necessary.
+
+
+
+
 Update1: 
 
 Right now, I am working on setting up unit testing for the function(s) dealing with parsing protein sequence
@@ -24,13 +36,6 @@ housed in the data_parser class. The real problem, is that I need to make sure t
 after it has been used. But it needs to be analysed by the unit test. So The file really needs to be created by
 the unit test and then passed to the convert_back_to_file function. But I don't like the idea of the return object being
 passed to the function as a parameter. Is this a bad idea? More research is needed.
-
-Update 2: 
-
-I have now finished writing the unit test for all the sequence information given by the user. The Unit Test successfully
-fails. It is now time to implement all the functions needed to get the Unit Test working.
-all the func
-Decision has been made. Note: Decide what data type extracted_protein_data will be.
 
 
 1/2/2023
