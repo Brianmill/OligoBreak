@@ -7,7 +7,7 @@ def extract_protein_sequence(protein_sequence_file: str, multiple_amino_file: st
     raise (NotImplementedError('extract_protein_sequence not yet implemented'))
 
 
-def store_protein_sequence() -> str:
+def store_protein_sequence(protein_sequence_data) -> str:
     raise (NotImplementedError('store_protein_sequence not yet implemented'))
 
 

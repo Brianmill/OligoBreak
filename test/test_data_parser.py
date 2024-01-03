@@ -1,18 +1,40 @@
+from pathlib import Path
+import tempfile
 import unittest
-import src
+from src.data_parser import *
 
 TEST_FILES = Path(__file__).parent / 'test_files'
 class TestDataParser(unittest.TestCase):
 
-    def test_temp(self):
-        result = 15
-        self.assertEqual(result, 15)
 
     def test_protein_sequence_extraction(self):
-        protein_sequence_file = str(TEST_FILES / "ferredoxin_oxidoreductase.fasta")
-        multiple_amino_file = str(TEST_FILES / "ferredoxin_oxidoreductase_degen_condons.txt")
+        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
+        multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_degen_condons.txt')
 
-        extracted_protein_secquence_data = extract_protein_sequence()
+        ## getting the original data from the two files
+        with open(protein_sequence_file, 'r') as file:
+            original_protein_sequence_data = file.read()
+        with open(multiple_amino_file, 'r') as file:
+            original_multiamino_data = file.read()
+
+        ##running the two files through data extraction and reencoding
+        extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file, multiple_amino_file)
+        reencoded_protein_sequence_data, reencoded_multiamino_data = store_protein_sequence(extracted_protein_sequence_data)
+
+        self.assertEqual(
+            original_protein_sequence_data,
+            reencoded_protein_sequence_data,
+            "Original protein sequence data does not match re-encoded data."
+        )
+        self.assertEqual(
+            original_multiamino_data,
+            reencoded_multiamino_data,
+
+            "Original multi-amino data does not match re-encoded data."
+        )
+
+
+
 
 
 if __name__ == '__main__':

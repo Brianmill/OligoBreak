@@ -1,3 +1,38 @@
+
+1/3/2024
+
+Good morning. Today, I will continue the progress I have made from yesterday. I would like to complete step 4 today, and get working
+on step 5.
+
+Update1: 
+
+Right now, I am working on setting up unit testing for the function(s) dealing with parsing protein sequence
+information. As noted on 12/27/2023, I have decided to take a round trip approach. I am re-encoding the data
+back into a file. Then, I will compare the resulting file with the original to ensure no loss of data. The trouble I am 
+currently running into is decinding where to put the convert_back_to_file function, that will return the data to
+its original file format. Here is what I know so far. The file needs to be a temporary file. 
+
+Option 1:
+convert_back_to_file is a function in the data_parser class.
+
+Option 2:
+convert_back_to_file is a helper function in the test_data_parser file.
+
+I think that option 2 is the better option, as there is no reason to call the function except for testing purposes. 
+Perhaps I am mistaken, however, and there will be a case in the future. I am perfectly fine with the function being
+housed in the data_parser class. The real problem, is that I need to make sure that the temporary file is deleted
+after it has been used. But it needs to be analysed by the unit test. So The file really needs to be created by
+the unit test and then passed to the convert_back_to_file function. But I don't like the idea of the return object being
+passed to the function as a parameter. Is this a bad idea? More research is needed.
+
+Update 2: 
+
+I have now finished writing the unit test for all the sequence information given by the user. The Unit Test successfully
+fails. It is now time to implement all the functions needed to get the Unit Test working.
+all the func
+Decision has been made. Note: Decide what data type extracted_protein_data will be.
+
+
 1/2/2023
 
 Happy New Year! I just finished my Application to RICE university, and now have time to dedicate fully towards
