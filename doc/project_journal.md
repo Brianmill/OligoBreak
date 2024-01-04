@@ -1,4 +1,11 @@
 
+1/4/2024
+
+Daily Debrief: Yesterday, I completed the implementation of the store_protein_sequence and extract_protein_sequence. I 
+realized that I would have to extract and store the multi-amino data in a separate function. I realized that these are 2
+separate tasks and so require 2 separate functions. Implementing the extraction and storage of the multi-amino data is 
+today's goal. We will see how that goes.
+
 1/3/2024
 
 Good morning. Today, I will continue the progress I have made from yesterday. I would like to complete step 4 today, and get working

@@ -1,8 +1,9 @@
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-def extract_protein_sequence(protein_seq_file: str):
-    fasta_file = open(protein_seq_file, "r")
+
+def extract_protein_sequence(protein_seq_file_path: str):
+    fasta_file = open(protein_seq_file_path, "r")
     protein_name = fasta_file.readline().strip()
     protein_seq = fasta_file.read().strip()
     fasta_file.close()
@@ -13,22 +14,34 @@ def extract_protein_sequence(protein_seq_file: str):
     )
     return record
 
-def store_protein_sequence(protein_sequence_data) -> str:
-    name = protein_sequence_data.name
-    print(name)
-    sequence = protein_sequence_data.seq
-    print(sequence)
 
-    print(str(name) + '\n' + str(sequence))
-    fasta_string = str(name) + str(sequence)
+def store_protein_sequence(protein_sequence_data) -> str:
+    name = str(protein_sequence_data.name)
+    sequence = str(protein_sequence_data.seq)
+    fasta_string = name + sequence
     return fasta_string
 
-def extract_multiple_amino_data(multiple_amino_file: str):
-    raise (NotImplementedError('extract_multiple_amino_data not yet implemented'))
+
+def extract_multiple_amino_data(multi_amino_file_path: str):
+    multi_amino_file = open(multi_amino_file_path, "r")
+    multi_amino_data = {}
+
+    for line in multi_amino_file:
+        index, amino_acids = line.strip().split(',')
+        multi_amino_data[index] = amino_acids
+
+    multi_amino_file.close()
+    return multi_amino_data
 
 
-def store_multiple_amino_data(multiple_amino_data) -> str:
-    raise (NotImplementedError('store_multiple_amino_data not yet implemented'))
+def store_multiple_amino_data(multi_amino_data) -> str:
+
+    output_string = ''
+
+    for index in multi_amino_data:
+        output_string = output_string + index + ',' + multi_amino_data[index] + '\n'
+
+    return output_string
 
 
 def extract_organism_codon_frequencies(codon_frequencies_file: str):

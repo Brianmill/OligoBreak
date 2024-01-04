@@ -4,8 +4,9 @@ import unittest
 from src.data_parser import *
 
 TEST_FILES = Path(__file__).parent / 'test_files'
-class TestDataParser(unittest.TestCase):
 
+
+class TestDataParser(unittest.TestCase):
 
     def test_protein_sequence_extraction(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
@@ -25,23 +26,20 @@ class TestDataParser(unittest.TestCase):
         )
 
     def test_multiamino_data_extraction(self):
-        multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_degen_condons.txt')
+        multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_multi_aminos.csv')
 
         with open(multiple_amino_file, 'r') as file:
             original_multiamino_data = file.read()
 
-        extracted_multiamino_data = extract_protein_sequence(multiple_amino_file)
-        reencoded_multiamino_data = store_protein_sequence(extracted_multiamino_data)
+        extracted_multiamino_data = extract_multiple_amino_data(multiple_amino_file)
+        reencoded_multiamino_data = store_multiple_amino_data(extracted_multiamino_data)
 
         self.assertEqual(
-            original_multiamino_data,
-            reencoded_multiamino_data,
+            original_multiamino_data.strip(),
+            reencoded_multiamino_data.strip(),
             "Original multi-amino data does not match re-encoded data."
         )
 
 
-
-
 if __name__ == '__main__':
     unittest.main()
-
