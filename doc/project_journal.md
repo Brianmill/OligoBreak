@@ -1,4 +1,15 @@
 
+1/5/2024
+
+Daily Debrief: Yesterday, I was able to implement the extraction and storage of the multi-amino acid data. I then moved 
+on to dealing with the multi-amino data files. I completed that as well, however, all the storage functions return a
+huge string with no tabs, or new line characters. Therefore, the output is not very human-readable. THis is because it makes
+string comparison easier. If in the future,  I want to be able to make sense of the output, the function will have to be 
+rewritten, or a new function will have to be made. Another note is that the two functions handling the multi-amino files
+take like 6 seconds to run consecutively. That is quite long, but it is a one time cost that can be run in the background,
+so it is not too big of a deal. For now, all that I have left for file i/o is the organism codon-frequency data. Hopefully
+that will be completed today.
+
 1/4/2024
 
 Daily Debrief: Yesterday, I completed the implementation of the store_protein_sequence and extract_protein_sequence. I 
@@ -27,6 +38,7 @@ Update1:
 
 Right now, I am working on setting up unit testing for the function(s) dealing with parsing protein sequence
 information. As noted on 12/27/2023, I have decided to take a round trip approach. I am re-encoding the data
+
 back into a file. Then, I will compare the resulting file with the original to ensure no loss of data. The trouble I am 
 currently running into is decinding where to put the convert_back_to_file function, that will return the data to
 its original file format. Here is what I know so far. The file needs to be a temporary file. 

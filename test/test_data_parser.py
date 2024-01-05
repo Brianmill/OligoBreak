@@ -1,7 +1,9 @@
 from pathlib import Path
+import string
+from src.data_parser import *
 import tempfile
 import unittest
-from src.data_parser import *
+
 
 TEST_FILES = Path(__file__).parent / 'test_files'
 
@@ -25,20 +27,37 @@ class TestDataParser(unittest.TestCase):
             "Original protein sequence data does not match re-encoded data."
         )
 
-    def test_multiamino_data_extraction(self):
+    def test_multi_amino_data_extraction(self):
         multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_multi_aminos.csv')
 
         with open(multiple_amino_file, 'r') as file:
             original_multiamino_data = file.read()
 
-        extracted_multiamino_data = extract_multiple_amino_data(multiple_amino_file)
-        reencoded_multiamino_data = store_multiple_amino_data(extracted_multiamino_data)
+        extracted_multiamino_data = extract_multi_amino_data(multiple_amino_file)
+        reencoded_multiamino_data = store_multi_amino_data(extracted_multiamino_data)
 
         self.assertEqual(
             original_multiamino_data.strip(),
             reencoded_multiamino_data.strip(),
             "Original multi-amino data does not match re-encoded data."
         )
+
+    def test_extract_degenerate_codons_key(self):
+        degenerate_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
+
+        with open(degenerate_codon_file, 'r') as file:
+            original_degenerate_codon_data = file.read().translate(str.maketrans("", "", string.whitespace))
+
+        extracted_degenerate_codon_data = extract_degenerate_codons_key(degenerate_codon_file)
+        reencoded_degenerate_codon_data = store_degenerate_codons_key(extracted_degenerate_codon_data)
+
+        self.assertEqual(
+            original_degenerate_codon_data.strip(),
+            reencoded_degenerate_codon_data.strip(),
+            "Original degenerate codon data does not match re-encoded data."
+        )
+
+
 
 
 if __name__ == '__main__':
