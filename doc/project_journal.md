@@ -1,5 +1,14 @@
 
+1/6/2024
+
+Daily Debrief: Yesterday, I ran into a bit of a roadblock in regards to finding good quality data on organism codon frequencies. 
+I finally found a source that I would feel comfortable citing, as it gets its data from RefSeq. I think I will be able 
+to finish file input tonight.
+
 1/5/2024
+
+Note: I got the human codon frequencies data from the following link https://dnahive.fda.gov/dna.cgi?cmd=codon_usage&id=537&mode=cocoputs
+which contains 123938 CDSs (80831647 codons), taken from RefSeq.
 
 Daily Debrief: Yesterday, I was able to implement the extraction and storage of the multi-amino acid data. I then moved 
 on to dealing with the multi-amino data files. I completed that as well, however, all the storage functions return a

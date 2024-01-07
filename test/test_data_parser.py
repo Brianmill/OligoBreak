@@ -57,6 +57,20 @@ class TestDataParser(unittest.TestCase):
             "Original degenerate codon data does not match re-encoded data."
         )
 
+    def test_extract_organism_codon_frequencies(self):
+        codon_frequencies_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\organisim_codon_frequencies\\human_codon_frequencies.csv'
+
+        with open(codon_frequencies_file, 'r') as file:
+            original_codon_frequencies_data = file.read()
+
+        extracted_codon_frequencies_data = extract_organism_codon_frequencies(codon_frequencies_file)
+        reencoded_codon_frequencies_data = store_organism_codon_frequencies(extracted_codon_frequencies_data)
+
+        self.assertEqual(
+            extracted_codon_frequencies_data.strip(),
+            reencoded_codon_frequencies_data.strip(),
+            "Original codon frequency data does not match re-encoded data."
+        )
 
 
 
