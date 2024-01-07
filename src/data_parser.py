@@ -43,9 +43,9 @@ def store_multi_amino_data(multi_amino_data) -> str:
     return output_string
 
 
-def extract_degenerate_codons_key(degenerate_codons_key_file: str):
+def extract_degenerate_codons_key(degenerate_codons_file_path: str):
 
-    degenerate_codon_file = open(degenerate_codons_key_file, "r")
+    degenerate_codon_file = open(degenerate_codons_file_path, "r")
     decodon_data = {}
 
     for line in degenerate_codon_file:
@@ -72,8 +72,18 @@ def store_degenerate_codons_key(decodon_data) -> str:
     return ''.join(output_list)
 
 
-def extract_organism_codon_frequencies(codon_frequencies_file: str):
-    raise (NotImplementedError('extract_organism_codon_frequencies not yet implemented'))
+def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
+
+    codon_frequency_file = open(codon_frequencies_file_path, "r")
+    codon_per_mille_data = {}
+
+    for line in codon_frequency_file:
+        amino_acid, per_mille = line.strip().split(',')
+        codon_per_mille_data[amino_acid] = {
+            per_mille
+        }
+    codon_frequency_file.close()
+    return codon_per_mille_data
 
 
 def store_organism_codon_frequencies() -> str:

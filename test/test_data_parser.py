@@ -4,7 +4,6 @@ from src.data_parser import *
 import tempfile
 import unittest
 
-
 TEST_FILES = Path(__file__).parent / 'test_files'
 
 
@@ -71,7 +70,6 @@ class TestDataParser(unittest.TestCase):
             reencoded_codon_frequencies_data.strip(),
             "Original codon frequency data does not match re-encoded data."
         )
-
 
 
 if __name__ == '__main__':
