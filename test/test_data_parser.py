@@ -66,7 +66,7 @@ class TestDataParser(unittest.TestCase):
         reencoded_codon_frequencies_data = store_organism_codon_frequencies(extracted_codon_frequencies_data)
 
         self.assertEqual(
-            extracted_codon_frequencies_data.strip(),
+            original_codon_frequencies_data.strip(),
             reencoded_codon_frequencies_data.strip(),
             "Original codon frequency data does not match re-encoded data."
         )

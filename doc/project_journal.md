@@ -1,7 +1,10 @@
 
 1/6/2024
 
-Daily Debrief: Yesterday, I ran into a bit of a roadblock in regards to finding good quality data on organism codon frequencies. 
+Update 1: I completed all 4 data extraction and storage functions. All 4 unit tests have passed successfully. Time to
+move on to the next stage of the project. : )
+
+Daily Debrief: Yesterday, I ran into a bit of a roadblock in regard to finding good quality data on organism codon frequencies. 
 I finally found a source that I would feel comfortable citing, as it gets its data from RefSeq. I think I will be able 
 to finish file input tonight.
 

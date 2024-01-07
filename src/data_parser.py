@@ -38,7 +38,7 @@ def store_multi_amino_data(multi_amino_data) -> str:
     output_string = ''
 
     for index in multi_amino_data:
-        output_string = output_string + index + ' ,' + multi_amino_data[index] + '\n'
+        output_string = output_string + index + ',' + multi_amino_data[index] + '\n'
 
     return output_string
 
@@ -79,12 +79,14 @@ def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
 
     for line in codon_frequency_file:
         amino_acid, per_mille = line.strip().split(',')
-        codon_per_mille_data[amino_acid] = {
-            per_mille
-        }
+        codon_per_mille_data[amino_acid] = per_mille
     codon_frequency_file.close()
     return codon_per_mille_data
 
 
-def store_organism_codon_frequencies() -> str:
-    raise (NotImplementedError('store_organism_codon_frequencies not yet implemented'))
+def store_organism_codon_frequencies(codon_per_mille_data) -> str:
+    output_list = []
+    for amino_acid in codon_per_mille_data:
+        per_mille = codon_per_mille_data[amino_acid]
+        output_list.append(f"{amino_acid},{per_mille}")
+    return '\n'.join(output_list)
