@@ -1,3 +1,4 @@
+from src.data_parser import aminoAcid
 from pathlib import Path
 import string
 from src.data_parser import *
@@ -70,6 +71,26 @@ class TestDataParser(unittest.TestCase):
             reencoded_codon_frequencies_data.strip(),
             "Original codon frequency data does not match re-encoded data."
         )
+
+    def test_amino_acid_to_binary(self):
+
+        # adapted from https://stackoverflow.com/questions/25589729/binary-numbers-of-n-digits
+        number_of_digits = 20
+        for index in range(1048576):
+            # creates a binary number, but strips off the leading '0b'
+            binary_number = bin(index)[2:]
+            length_of_number = len(binary_number)
+            # adds on the leading 0s onto the binary number
+            binary_number = str(0) * (number_of_digits - length_of_number) + binary_number
+            original_binary_representation = binary_number
+            amino_acid_letter_representation = aminoAcid.binary_to_letter(original_binary_representation)
+            reencoded_binary_representation = aminoAcid.letter_to_binary(amino_acid_letter_representation)
+
+            self.assertEqual(
+                original_binary_representation,
+                reencoded_binary_representation,
+                "Original binary representation does not match re-encoded binary representation."
+            )
 
 
 if __name__ == '__main__':
