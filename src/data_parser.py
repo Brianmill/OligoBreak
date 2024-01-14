@@ -59,8 +59,8 @@ def extract_degenerate_codons_key(degenerate_codons_file_path: str):
         they are in alphabetical order based on full amino name
         """
         decodon_data[amino_acid_key] = {
-            'num_decodons': num_decodons,
-            'decodon_set': decodon_set,
+            'num_codons': num_decodons,
+            'codon_set': decodon_set,
             'score': score
         }
     degenerate_codon_file.close()
@@ -70,8 +70,8 @@ def extract_degenerate_codons_key(degenerate_codons_file_path: str):
 def store_degenerate_codons_key(decodon_data) -> str:
     output_list = []
     for amino_acid_key in decodon_data:
-        num_decodons = decodon_data[amino_acid_key]['num_decodons']
-        decodons = ''.join(decodon_data[amino_acid_key]['decodon_set'])
+        num_decodons = decodon_data[amino_acid_key]['num_codons']
+        decodons = ''.join(decodon_data[amino_acid_key]['codon_set'])
         score = decodon_data[amino_acid_key]['score']
         output_list.append(f"{num_decodons}{amino_acid_key}{decodons}{score}")
 
@@ -96,72 +96,50 @@ def store_organism_codon_frequencies(codon_per_mille_data) -> str:
         output_list.append(f"{amino_acid},{per_mille}")
     return '\n'.join(output_list)
 
+    # converts a binary representation of an amino acid set to its letter representation.
+    # i.e. 10000000100000001011 -> {'A', 'H', 'T', 'Y', 'V'}
+    # The logic is as follows:
+    # 10000000100000001011
+    # |.......|.......|.||
+    # ARNDCQEGHILKMFPSTWYV
 
-def binary_to_letter(binary_representation):
-    """
-    converts a binary representation of an amino acid set to its letter representation.
-    i.e. 10000000100000001011 -> {'A', 'H', 'T', 'Y', 'V'}
-    The logic is as follows:
-    10000000100000001011
-    |.......|.......|.||
-    ARNDCQEGHILKMFPSTWYV
-    """
+    # converts a letter representation of an amino acid set to its binary representation.
+    # i.e. {'A', 'H', 'T', 'Y', 'V'} -> 10000000100000001011
+    # The logic is as follows:
+    # ARNDCQEGHILKMFPSTWYV
+    # |.......|.......|.||
+    # 10000000100000001011
+
+
+def convert_from_amino_set_to_codon_set(amino_set, aminos_to_codons):
+    if not amino_set:
+        return set()
+
     # the list of amino acid letters in alphabetical order according to full name, used for decoding and encoding
-    const_amino_list = "ARNDCQEGHILKMFPSTWYV"
+    amino_list = "VYWTSPFMKLIHGEQCDNRA"
 
-    letter_representation = set()
-    for index, bit in enumerate(binary_representation):
-        if bit == '1':
-            letter_representation.add(const_amino_list[index])
-
-    return letter_representation
-
-
-def letter_to_binary(letter_representation: set):
-    """
-    converts a letter representation of an amino acid set to its binary representation.
-    i.e. {'A', 'H', 'T', 'Y', 'V'} -> 10000000100000001011
-    The logic is as follows:
-    ARNDCQEGHILKMFPSTWYV
-    |.......|.......|.||
-    10000000100000001011
-    """
-    # the list of amino acid letters in alphabetical order according to full name, used for decoding and encoding
-    const_amino_list = "ARNDCQEGHILKMFPSTWYV"
     binary_representation = ""
-    for index, letter in enumerate(const_amino_list):
-        if letter in letter_representation:
+    for index, amino in enumerate(amino_list):
+        if amino in amino_set:
             binary_representation = binary_representation + "1"
         else:
             binary_representation = binary_representation + "0"
-    return binary_representation
+
+    codon_set = aminos_to_codons[binary_representation]['codon_set']
+    return codon_set
 
 
-# converts from a set of amino acids to the set of codons that code for those amino acids
-def convert_from_multi_amino_to_multi_codon(amino_acid_letter_representation: set, aminos_to_codons: dict):
-    amino_acid_binary_representation = letter_to_binary(amino_acid_letter_representation)
-    return aminos_to_codons[amino_acid_binary_representation]['decodon_set']
-
-
-def convert_from_multi_codon_to_multi_amino(multi_codon_set: set, aminos_to_codons: dict):
+def convert_from_codon_set_to_amino_set(multi_codon_set):
     # converts from a set of codons to the set of amino acids that are coded for by the codon set
 
-
-    print("multi_codon_set: " + str(multi_codon_set))
-
-    full_codon_set = set() # all the codons derived from every multi-codon
+    full_codon_set = set()  # all the codons derived from every multi-codon
     for multi_codon in multi_codon_set:
         partial_codon_set = convert_from_multi_codon_to_single_codon_set(
             multi_codon)  # codons derived from individual multi-codon
         full_codon_set.update(partial_codon_set)
-    print("Full Codon set: " + str(full_codon_set))
 
-    amino_acid_set = convert_from_codon_set_to_amino_acid_set(full_codon_set)
-    print("Amino Acid set: " + str(amino_acid_set))
-    binary_representation = letter_to_binary(amino_acid_set)
-    print("Binary Representation: " + binary_representation)
-
-    raise NotImplementedError("convert_from_multi_decodon_to_multi_amino is not yet implemented.")
+    amino_set = convert_from_codon_set_to_amino_acid_set(full_codon_set)
+    return amino_set
 
 
 def convert_from_multi_codon_to_single_codon_set(multi_codon):

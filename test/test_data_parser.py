@@ -1,3 +1,4 @@
+import cProfile
 import itertools
 from pathlib import Path
 import string
@@ -75,27 +76,7 @@ class TestDataParser(unittest.TestCase):
             "Original codon frequency data does not match re-encoded data."
         )
 
-    def test_amino_acid_to_binary(self):
-
-        # adapted from https://stackoverflow.com/questions/25589729/binary-numbers-of-n-digits
-        number_of_digits = 20
-        for index in range(1048576):
-            # creates a binary number, but strips off the leading '0b'
-            binary_number = bin(index)[2:]
-            length_of_number = len(binary_number)
-            # adds on the leading 0s onto the binary number
-            binary_number = str(0) * (number_of_digits - length_of_number) + binary_number
-            original_binary_representation = binary_number
-            amino_acid_letter_representation = binary_to_letter(original_binary_representation)
-            reencoded_binary_representation = letter_to_binary(amino_acid_letter_representation)
-
-            self.assertEqual(
-                original_binary_representation,
-                reencoded_binary_representation,
-                "Original binary representation does not match re-encoded binary representation."
-            )
-
-    def test_amino_acid_codon_roundtrip(self):
+    def test_amino_acid_to_codon_roundtrip(self):
         amino_acid_set = {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
                           'Y'}
         amino_acid_combinations = set()
@@ -111,17 +92,17 @@ class TestDataParser(unittest.TestCase):
             amino_acid_to_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
             amino_acid_to_codon_dict = extract_degenerate_codons_key(amino_acid_to_codon_file)
 
-        for expected_amino_set in amino_acid_combinations:
+        for index, expected_amino_set in enumerate(amino_acid_combinations):
             codon_set = convert_from_amino_set_to_codon_set(expected_amino_set, amino_acid_to_codon_dict)
             actual_amino_set = convert_from_codon_set_to_amino_set(codon_set)
-
-            self.assertEqual(
+            self.assertCountEqual(
                 expected_amino_set,
                 actual_amino_set,
-                "Expected and actual amino acid sets do not match."
             )
-
+            if index % 10000 == 0:
+                percent = index / 10000
+                print(percent)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    cProfile.run.main()
