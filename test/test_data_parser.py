@@ -1,9 +1,11 @@
+import sys
+
+sys.path.append("..")
 import cProfile
 import itertools
 from pathlib import Path
 import string
 from src.data_parser import *
-import tempfile
 import unittest
 
 TEST_FILES = Path(__file__).parent / 'test_files'
@@ -99,10 +101,10 @@ class TestDataParser(unittest.TestCase):
                 expected_amino_set,
                 actual_amino_set,
             )
-            if index % 10000 == 0:
-                percent = index / 10000
+            if index % 10485 == 0:
+                percent = index / 10485
                 print(percent)
 
 
 if __name__ == '__main__':
-    cProfile.run.main()
+    cProfile.run("unittest.main()", sort='ncalls')
