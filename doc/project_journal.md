@@ -1,5 +1,55 @@
 
 
+Sunday, 1/14/2024
+
+Daily Debrief:
+Over the weekend, I have been working on completing the amino_acid nucleotide conversion functions. Hopefully, I will be
+completed with them today. This will require a bit of refactoring, to decide exactly which funcitons should be doing
+which jobs. Then, I suppose, I shall move on to the problem of converting an entire amino-acid chain into
+DNA, taking into account codon frequencies.
+
+Brainstorming Session:
+So, here is the current flow of data regarding amino_acids and codons.
+1. We start off with an amino acid set: {'N', 'I', 'T', 'S'}. 
+2. We then convert it into a binary string using letter_to_binary: '00100000010000011000'
+3. We then pass the binary string into the amino_acid to codon dictionary through the convert_from_multi_amino_to_multi_codon
+function to return a codon set: {'CTG', 'GAC', 'TGS'}
+   1. Right now this function is pointless, as it is literally a single line long. Any time I want to convert from binary to 
+codon_set, I could literally just pass the binary number through the dictionary, instead of passing the binary number
+and the dictionary through a pointless function that has the same exact functionality, but with extra steps.
+
+To summarize: 
+1. letter_to_binary({'N', 'I', 'T', 'S'}) &rarr; '00100000010000011000'
+2. convert_from_multi_amino_to_multi_codon('00100000010000011000') &rarr; {'CTG', 'GAC', 'TGS'}
+
+I will combine 
+
+Now let's document the flow of data going the other way.
+
+1. We convert one or more multi_codons into amino_acid sets using convert_from_multi_codon_to_multi_amino
+   1. We start off with one or more multi_codons that are converted into a set of corresponding codon sets using 
+the helper functionL convert_from_multi_codon_to_single_codon_set
+   2. We then convert the combined codon set into an amino_acid set using the helper function: 
+convert_from_codon_set_to_amino_acid_set
+
+
+The only function we have not used is binary_to_letter. Is there any reason why we would need a function that converts
+a binary representation into a letter representation? I do not know. For testing purposes, I think that we should have
+a test that tests every single combination of amino acids in letter format, going on a round trip. I believe that the binary
+representation is only ever an intermediate value, and we never actually want to look at the data in binary format. Perhaps
+there may be some situation where having the protein sequence in binary format would result in a more efficient algorithm, 
+but if that is the case, then I think that I could just add another function then.
+
+So really, I need only two main functions.
+1. convert_from_amino_set_to_codon_set(amino_set, codon_dict) &rarr; codon_set
+2. convert_from_codon_set_to_amino_set(codon_set) &rarr; amino_set
+
+Function 1 will be a combination of letter_to_binary() and convert_from_multi_amino_to_multi_codon
+Function 2 may have additional helper methods, as it is now, or it may be one long method, depending on what will be more legible
+
+
+
+
 Friday, 1/12/2024
 
 On Sunday, I came to the conclusion that tackling the multi-amino to multi-decodon function is very important.

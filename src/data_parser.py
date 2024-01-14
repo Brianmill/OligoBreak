@@ -97,35 +97,116 @@ def store_organism_codon_frequencies(codon_per_mille_data) -> str:
     return '\n'.join(output_list)
 
 
-class aminoAcid:
-    @staticmethod
-    def binary_to_letter(binary_representation):
-        # the list of amino acid letters in alphabetical order according to full name, used for decoding and encoding
-        const_amino_list = "ARNDCQEGHILKMFPSTWYV"
+def binary_to_letter(binary_representation):
+    """
+    converts a binary representation of an amino acid set to its letter representation.
+    i.e. 10000000100000001011 -> {'A', 'H', 'T', 'Y', 'V'}
+    The logic is as follows:
+    10000000100000001011
+    |.......|.......|.||
+    ARNDCQEGHILKMFPSTWYV
+    """
+    # the list of amino acid letters in alphabetical order according to full name, used for decoding and encoding
+    const_amino_list = "ARNDCQEGHILKMFPSTWYV"
 
-        letter_representation = set()
-        for index, bit in enumerate(binary_representation):
-            if bit == '1':
-                letter_representation.add(const_amino_list[index])
+    letter_representation = set()
+    for index, bit in enumerate(binary_representation):
+        if bit == '1':
+            letter_representation.add(const_amino_list[index])
 
-        return letter_representation
-
-    @staticmethod
-    def letter_to_binary(letter_representation):
-        # the list of amino acid letters in alphabetical order according to full name, used for decoding and encoding
-        const_amino_list = "ARNDCQEGHILKMFPSTWYV"
-        binary_representation = ""
-        for index, letter in enumerate(const_amino_list):
-            if letter in letter_representation:
-                binary_representation = binary_representation + "1"
-            else:
-                binary_representation = binary_representation + "0"
-        return binary_representation
+    return letter_representation
 
 
-def convert_from_multi_amino_to_multi_decodon(amino_acids, amino_decodon_dict):
-    raise NotImplementedError("convert_from_multi_amino_to_mutli_decodon is not yet implemented.")
+def letter_to_binary(letter_representation: set):
+    """
+    converts a letter representation of an amino acid set to its binary representation.
+    i.e. {'A', 'H', 'T', 'Y', 'V'} -> 10000000100000001011
+    The logic is as follows:
+    ARNDCQEGHILKMFPSTWYV
+    |.......|.......|.||
+    10000000100000001011
+    """
+    # the list of amino acid letters in alphabetical order according to full name, used for decoding and encoding
+    const_amino_list = "ARNDCQEGHILKMFPSTWYV"
+    binary_representation = ""
+    for index, letter in enumerate(const_amino_list):
+        if letter in letter_representation:
+            binary_representation = binary_representation + "1"
+        else:
+            binary_representation = binary_representation + "0"
+    return binary_representation
 
 
-def convert_from_multi_decodon_to_multi_amino(multi_decodons):
+# converts from a set of amino acids to the set of codons that code for those amino acids
+def convert_from_multi_amino_to_multi_codon(amino_acid_letter_representation: set, aminos_to_codons: dict):
+    amino_acid_binary_representation = letter_to_binary(amino_acid_letter_representation)
+    return aminos_to_codons[amino_acid_binary_representation]['decodon_set']
+
+
+def convert_from_multi_codon_to_multi_amino(multi_codon_set: set, aminos_to_codons: dict):
+    # converts from a set of codons to the set of amino acids that are coded for by the codon set
+
+
+    print("multi_codon_set: " + str(multi_codon_set))
+
+    full_codon_set = set() # all the codons derived from every multi-codon
+    for multi_codon in multi_codon_set:
+        partial_codon_set = convert_from_multi_codon_to_single_codon_set(
+            multi_codon)  # codons derived from individual multi-codon
+        full_codon_set.update(partial_codon_set)
+    print("Full Codon set: " + str(full_codon_set))
+
+    amino_acid_set = convert_from_codon_set_to_amino_acid_set(full_codon_set)
+    print("Amino Acid set: " + str(amino_acid_set))
+    binary_representation = letter_to_binary(amino_acid_set)
+    print("Binary Representation: " + binary_representation)
+
     raise NotImplementedError("convert_from_multi_decodon_to_multi_amino is not yet implemented.")
+
+
+def convert_from_multi_codon_to_single_codon_set(multi_codon):
+    # converts from multi-codon to corresponding codon sets
+    # i.e. {'ANT'} -> {'AAT', 'ATT', 'ACT', 'AGT'}
+
+    iupac_dict = {  # a dictionary that maps IUPAC DNA nucleotide codes to corresponding DNA nucleotide sets
+        'A': {'A'},
+        'C': {'C'},
+        'G': {'G'},
+        'T': {'T'},
+        'R': {'A', 'G'},
+        'Y': {'C', 'T'},
+        'S': {'G', 'C'},
+        'W': {'A', 'T'},
+        'K': {'G', 'T'},
+        'M': {'A', 'C'},
+        'B': {'C', 'G', 'T'},
+        'D': {'A', 'G', 'T'},
+        'H': {'A', 'C', 'T'},
+        'V': {'A', 'C', 'G'},
+        'N': {'A', 'T', 'C', 'G'}
+    }
+
+    # converting the three nucleotides from IUPAC into the corresponding nucleotide sets
+    first_nucleotide_set = iupac_dict[multi_codon[0]]
+    second_nucleotide_set = iupac_dict[multi_codon[1]]
+    third_nucleotide_set = iupac_dict[multi_codon[2]]
+
+    # stitching the nucleotides together to form all possible codons
+    codon_set = set()
+    for first_nucleotide in first_nucleotide_set:
+        for second_nucleotide in second_nucleotide_set:
+            for third_nucleotide in third_nucleotide_set:
+                codon = first_nucleotide + second_nucleotide + third_nucleotide
+                codon_set.add(codon)
+    return codon_set
+
+
+def convert_from_codon_set_to_amino_acid_set(codon_set):
+    # {'AAT', 'ATT', 'ACT', 'AGT'} -> {'N', 'I', 'T', 'S'}
+
+    amino_acid_set = set()
+    for codon in codon_set:
+        amino_acid = Seq(codon).translate()
+        amino_acid_set.add(str(amino_acid))
+
+    return amino_acid_set
