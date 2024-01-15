@@ -84,6 +84,7 @@ class TestDataParser(unittest.TestCase):
         amino_acid_combinations = set()
         for n in range(0, 21):
             amino_acid_combinations.update(set(itertools.combinations(amino_acid_set, n)))
+        print(len(amino_acid_combinations))
 
         # test to ensure that all combinations of amino acids are present
         expected_length = 2 ** 20
@@ -101,10 +102,8 @@ class TestDataParser(unittest.TestCase):
                 expected_amino_set,
                 actual_amino_set,
             )
-            if index % 10485 == 0:
-                percent = index / 10485
-                print(percent)
 
 
 if __name__ == '__main__':
-    cProfile.run("unittest.main()", sort='ncalls')
+    cProfile.run("unittest.main()", sort='tottime')
+
