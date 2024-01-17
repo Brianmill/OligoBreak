@@ -32,6 +32,7 @@ AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP = {
     'N': {'A', 'T', 'C', 'G'}
 }
 
+
 def extract_protein_sequence(protein_seq_file_path: str):
     """Extracts protein and name information from a protein FASTA file.
 
@@ -250,7 +251,8 @@ def convert_codon_set_to_amino_set(ambiguous_codons):
     for ambiguous_codon in ambiguous_codons:
         # Step 1: converting the three nucleotides from ambiguous to unambiguous
         # {'ANK'} -> {'A', 'ATCG', 'GT'}
-        unambiguous_nucleotides = [AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide] for nucleotide in ambiguous_codon]
+        unambiguous_nucleotides = [AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide]
+                                   for nucleotide in ambiguous_codon]
 
         # Step 2: forming all possible codons through a cartesian product of nucleotides
         # {'A', 'ATCG', 'GT'} -> {'AAG', 'ATG', 'ACG', 'AGG', 'AAT', 'ATT', 'ACT', 'AGT'}
@@ -261,3 +263,11 @@ def convert_codon_set_to_amino_set(ambiguous_codons):
         amino_set.update(set([CODON_TABLE[codon] for codon in unambiguous_codons]))
 
     return amino_set
+
+
+def convert_protein_sequence_to_dna_sequence(protein_sequence):
+    pass
+
+
+def convert_dna_sequence_to_protein_sequence(dna_sequence):
+    pass

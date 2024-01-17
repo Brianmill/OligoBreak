@@ -14,6 +14,13 @@ test that starts from a codon set and goes to an amino set, however I will leave
 Today, my primary task is to document my code better. Once that is done, I may start working on implementing the protein to
 DNA conversion function
 
+Update: I have finished refactoring data_parser. For now, I am happy with the refactoring and level of documentation.
+
+These are some of the tasks ahead of me:
+Converting protein to oligonucleotide.
+Temperature function
+
+
 Update 1: I have made some progress on documentation, I am approximately 1/3 the way through. At that point, I got sidetracked
 by wanting to set up an API using Sphinx. This is not a simple matter, and I will leave this task for a future time.
 
