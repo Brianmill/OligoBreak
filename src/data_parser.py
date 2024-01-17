@@ -58,15 +58,6 @@ def extract_protein_sequence(protein_seq_file_path: str):
     return record
 
 
-def store_protein_sequence(protein_sequence_data) -> str:
-    # Converts protein data back into a String for roundtrip testing purposes
-
-    name = str(protein_sequence_data.name)
-    sequence = str(protein_sequence_data.seq)
-    fasta_string = name + sequence
-    return fasta_string
-
-
 def extract_multi_amino_data(multi_amino_file_path: str):
     """Extracts multi_amino data and stores them in a set.
 
@@ -94,15 +85,28 @@ def extract_multi_amino_data(multi_amino_file_path: str):
     return multi_amino_data
 
 
-def store_multi_amino_data(multi_amino_data) -> str:
-    # Converts multi amino data back into a String for roundtrip testing purposes
+def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
+    """Extracts codon frequencies for an organism and stores them in a dictionary
 
-    output_string = ''
+    Parameters
+    ----------
+    codon_frequencies_file_path : str
+        Path to the file containing the organism codon frequencies.
 
-    for index in multi_amino_data:
-        output_string = output_string + index + ',' + multi_amino_data[index] + '\n'
+    Returns
+    -------
+    dict
+        codon frequencies stored as permille (like percent but 1000 instead of 100)
+        codon_per_mille_data[codon] = per_mille
+    """
+    codon_frequency_file = open(codon_frequencies_file_path, "r")
+    codon_per_mille_data = {}
 
-    return output_string
+    for line in codon_frequency_file:
+        codon, per_mille = line.strip().split(',')
+        codon_per_mille_data[codon] = per_mille
+    codon_frequency_file.close()
+    return codon_per_mille_data
 
 
 def extract_amino_codon_dict(amino_codon_file_path: str):
@@ -152,6 +156,26 @@ def extract_amino_codon_dict(amino_codon_file_path: str):
     return amino_codon_dict
 
 
+def store_protein_sequence(protein_sequence_data) -> str:
+    # Converts protein data back into a String for roundtrip testing purposes
+
+    name = str(protein_sequence_data.name)
+    sequence = str(protein_sequence_data.seq)
+    fasta_string = name + sequence
+    return fasta_string
+
+
+def store_multi_amino_data(multi_amino_data) -> str:
+    # Converts multi amino data back into a String for roundtrip testing purposes
+
+    output_string = ''
+
+    for index in multi_amino_data:
+        output_string = output_string + index + ',' + multi_amino_data[index] + '\n'
+
+    return output_string
+
+
 def store_amino_codon_dict(amino_codon_dict) -> str:
     # Converts amino_set codon_set correspondences back into a String for roundtrip testing purposes
 
@@ -163,30 +187,6 @@ def store_amino_codon_dict(amino_codon_dict) -> str:
         output_list.append(f"{num_decodons}{amino_acid_key}{decodons}{score}")
 
     return ''.join(output_list)
-
-
-def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
-    """Extracts codon frequencies for an organism and stores them in a dictionary
-
-    Parameters
-    ----------
-    codon_frequencies_file_path : str
-        Path to the file containing the organism codon frequencies.
-
-    Returns
-    -------
-    dict
-        codon frequencies stored as permille (like percent but 1000 instead of 100)
-        codon_per_mille_data[codon] = per_mille
-    """
-    codon_frequency_file = open(codon_frequencies_file_path, "r")
-    codon_per_mille_data = {}
-
-    for line in codon_frequency_file:
-        codon, per_mille = line.strip().split(',')
-        codon_per_mille_data[codon] = per_mille
-    codon_frequency_file.close()
-    return codon_per_mille_data
 
 
 def store_organism_codon_frequencies(codon_per_mille_data) -> str:
