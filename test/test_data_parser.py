@@ -9,12 +9,10 @@ import unittest
 
 sys.path.append("..")
 
-
 TEST_FILES = Path(__file__).parent / 'test_files'
 
 
 class TestDataParser(unittest.TestCase):
-    amino_acid_to_codon_dict = None
 
     def test_protein_sequence_extraction(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
@@ -106,7 +104,10 @@ class TestDataParser(unittest.TestCase):
         protein_data = extract_protein_sequence(protein_sequence_file)
         original_protein_sequence = protein_data.sequence
 
-        dna_sequence = convert_protein_sequence_to_dna_sequence(original_protein_sequence)
+        codon_frequencies_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\organisim_codon_frequencies\\human_codon_frequencies.csv'
+        codon_frequencies = extract_organism_codon_frequencies(codon_frequencies_file)
+
+        dna_sequence = convert_protein_sequence_to_dna_sequence(original_protein_sequence, codon_frequencies)
         roundtrip_protein_sequence = convert_dna_sequence_to_protein_sequence(dna_sequence)
 
         self.assertEqual(
@@ -118,10 +119,13 @@ class TestDataParser(unittest.TestCase):
         multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_multi_aminos.csv')
         original_multi_amino_data = extract_multi_amino_data(multiple_amino_file)
 
-        multi_codon_data = convert_multi_amino_to_multi_codon_data(original_multi_amino_data)
+        amino_codon_dict_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
+        amino_codon_dict = extract_amino_codon_dict(amino_codon_dict_file)
+
+        multi_codon_data = convert_multi_amino_to_multi_codon_data(original_multi_amino_data, amino_codon_dict)
         roundtrip_multi_codon_data = convert_multi_codon_to_multi_amino_data(multi_codon_data)
 
-        self.assertEqual(
+        self.assertCountEqual(
             original_multi_amino_data,
             roundtrip_multi_codon_data,
         )

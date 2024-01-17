@@ -14,6 +14,30 @@ CODON_TABLE = {
     'GAC': 'D', 'GAT': 'D', 'GAA': 'E', 'GAG': 'E', 'GGA': 'G', 'GGC': 'G', 'GGG': 'G', 'GGT': 'G',
 }
 
+REVERSE_CODON_TABLE = {
+    'W': ['TGG'],
+    'M': ['ATG'],
+    'H': ['CAC', 'CAT'],
+    'Q': ['CAA', 'CAG'],
+    'N': ['AAC', 'AAT'],
+    'K': ['AAA', 'AAG'],
+    'D': ['GAC', 'GAT'],
+    'E': ['GAA', 'GAG'],
+    'Y': ['TAC', 'TAT'],
+    'F': ['TTC', 'TTT'],
+    'C': ['TGC', 'TGT'],
+    'I': ['ATA', 'ATC', 'ATT'],
+    '*': ['TAA', 'TAG', 'TGA'],
+    'P': ['CCA', 'CCC', 'CCG', 'CCT'],
+    'T': ['ACA', 'ACC', 'ACG', 'ACT'],
+    'V': ['GTA', 'GTC', 'GTG', 'GTT'],
+    'A': ['GCA', 'GCC', 'GCG', 'GCT'],
+    'G': ['GGA', 'GGC', 'GGG', 'GGT'],
+    'S': ['TCA', 'TCC', 'TCG', 'TCT', 'AGC', 'AGT'],
+    'L': ['TTA', 'TTG', 'CTA', 'CTC', 'CTG', 'CTT'],
+    'R': ['CGA', 'CGC', 'CGG', 'CGT', 'AGA', 'AGG']
+}
+
 # a dictionary that maps ambiguous DNA nucleotides to unambiguous DNA nucleotides
 AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP = {
     'A': {'A'},
@@ -71,14 +95,14 @@ def extract_multi_amino_data(multi_amino_file_path: str):
     Returns
     -------
     multi_amino_data : dict
-        extracted multi amino data. multi_amino_data[position] = 'amino_acids'
+        extracted multi amino data. multi_amino_data[position] = (amino_acids)
     """
     multi_amino_file = open(multi_amino_file_path, "r")
     multi_amino_data = {}
 
     for line in multi_amino_file:
         index, amino_acids = line.strip().split(',')
-        multi_amino_data[index] = amino_acids
+        multi_amino_data[index] = tuple(amino_acids)
 
     multi_amino_file.close()
     return multi_amino_data
@@ -171,7 +195,8 @@ def store_multi_amino_data(multi_amino_data) -> str:
     output_string = ''
 
     for index in multi_amino_data:
-        output_string = output_string + index + ',' + multi_amino_data[index] + '\n'
+        multi_amino_string = ''.join(str(amino) for amino in multi_amino_data[index])
+        output_string = output_string + index + ',' + multi_amino_string + '\n'
 
     return output_string
 
@@ -269,7 +294,7 @@ def convert_codon_set_to_amino_set(ambiguous_codons):
     return amino_set
 
 
-def convert_protein_sequence_to_dna_sequence(protein_sequence):
+def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
     pass
 
 
@@ -277,9 +302,17 @@ def convert_dna_sequence_to_protein_sequence(dna_sequence):
     pass
 
 
-def convert_multi_amino_to_multi_codon_data(multi_amino_data):
-    pass
+def convert_multi_amino_to_multi_codon_data(multi_amino_data, aminos_to_codons_mapping):
+    multi_codon_data = {}
+    for position, aminos in multi_amino_data.items():
+        codons = convert_amino_set_to_codon_set(aminos, aminos_to_codons_mapping)
+        multi_codon_data[position] = codons
+    return multi_codon_data
 
 
 def convert_multi_codon_to_multi_amino_data(multi_codon_data):
-    pass
+    multi_amino_data = {}
+    for position, codons in multi_codon_data.items():
+        aminos = convert_codon_set_to_amino_set(codons)
+        multi_amino_data[position] = aminos
+    return multi_amino_data
