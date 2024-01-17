@@ -1,4 +1,21 @@
 
+Tuesday, 1/16/2024
+
+Documenting the code is taking longer than expected.
+
+Monday, 1/15/2024
+
+Daily Debrief:
+Yesterday, I completed the round trip of amino set to codon set. I finished the refactoring, and 
+both convert_from_amino_set_to_codon_set and convert_from_codon_set_to_amino_set have been completed. A roundtrip 
+test starting from an amino set, and going to a codon test has passed successfully. Perhaps I would want a round trip
+test that starts from a codon set and goes to an amino set, however I will leave this for now.
+
+Today, my primary task is to document my code better. Once that is done, I may start working on implementing the protein to
+DNA conversion function
+
+Update 1: I have made some progress on documentation, I am approximately 1/3 the way through. At that point, I got sidetracked
+by wanting to set up an API using Sphinx. This is not a simple matter, and I will leave this task for a future time.
 
 Sunday, 1/14/2024
 
@@ -183,18 +200,18 @@ Things that are on the to-do list
 2. decide naming conventions for the data that comes from each of these files
 3. set up the function shells for:
    1. parsing all the data from the files and turning them into data objects
-   2. transfering the data back from data objects into data stored in files
-   3. unit tests to confirm that round trip results in no lossed information
+   2. transferring the data back from data objects into data stored in files
+   3. unit tests to confirm that round trip results in no lost information
 4. Code up the unit tests ensuring that they all fail
 5. code all the individual functions until the unit tests pass
 
-Note: Step 5 will be problematic, as it will require me to make difficult descisions on how to how to store the data
+Note: Step 5 will be problematic, as it will require me to make difficult decisions on how to store the data
 Look at notes from 12/26/2023 to see some of my initial brainstorming on the matter.
 
 Step 1: a list of all data sources:
 1. protein sequence information (provided by the user of the program)
 2. codon frequency information: the frequency of each codon in the DNA of a given organism
-3. degenerate codon information: the file containing the solutions to optimally coding for any given codon set
+3. degenerate codon information: the file containing the solutions to optimally coding for any given codon-set
 codon set.
 4. Technically not data from a file, but all the various parameters set by the user of the program
 such as temperature and length ranges.

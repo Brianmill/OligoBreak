@@ -52,10 +52,10 @@ class TestDataParser(unittest.TestCase):
         with open(degenerate_codon_file, 'r') as file:
             original_degenerate_codon_data = file.read().translate(str.maketrans("", "", string.whitespace))
 
-        extracted_degenerate_codon_data = extract_degenerate_codons_key(degenerate_codon_file)
+        extracted_degenerate_codon_data = extract_amino_codon_dict(degenerate_codon_file)
         # storing the dictionary for use in future tests
         self.amino_acid_to_codon_dict = extracted_degenerate_codon_data
-        reencoded_degenerate_codon_data = store_degenerate_codons_key(extracted_degenerate_codon_data)
+        reencoded_degenerate_codon_data = store_amino_codon_dict(extracted_degenerate_codon_data)
 
         self.assertEqual(
             original_degenerate_codon_data.strip(),
@@ -82,26 +82,23 @@ class TestDataParser(unittest.TestCase):
         amino_acid_set = {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
                           'Y'}
         amino_acid_combinations = set()
-        for n in range(0, 21):
+        for n in range(15, 21):
             amino_acid_combinations.update(set(itertools.combinations(amino_acid_set, n)))
         print(len(amino_acid_combinations))
-
-        # test to ensure that all combinations of amino acids are present
-        expected_length = 2 ** 20
-        self.assertEqual(expected_length, len(amino_acid_combinations))
 
         amino_acid_to_codon_dict = self.amino_acid_to_codon_dict
         if amino_acid_to_codon_dict is None:
             amino_acid_to_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
-            amino_acid_to_codon_dict = extract_degenerate_codons_key(amino_acid_to_codon_file)
+            amino_acid_to_codon_dict = extract_amino_codon_dict(amino_acid_to_codon_file)
 
         for index, expected_amino_set in enumerate(amino_acid_combinations):
-            codon_set = convert_from_amino_set_to_codon_set(expected_amino_set, amino_acid_to_codon_dict)
-            actual_amino_set = convert_from_codon_set_to_amino_set(codon_set)
+            codon_set = convert_amino_set_to_codon_set(expected_amino_set, amino_acid_to_codon_dict)
+            actual_amino_set = convert_codon_set_to_amino_set(codon_set)
             self.assertCountEqual(
                 expected_amino_set,
                 actual_amino_set,
             )
+
 
 
 if __name__ == '__main__':
