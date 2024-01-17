@@ -3,13 +3,27 @@ Tuesday, 1/16/2024
 
 Documenting the code is taking longer than expected.
 
-Monday, 1/15/2024
+
+Wednesday, 1/17/2024
 
 Daily Debrief:
-Yesterday, I completed the round trip of amino set to codon set. I finished the refactoring, and 
-both convert_from_amino_set_to_codon_set and convert_from_codon_set_to_amino_set have been completed. A roundtrip 
-test starting from an amino set, and going to a codon test has passed successfully. Perhaps I would want a round trip
-test that starts from a codon set and goes to an amino set, however I will leave this for now.
+Yesterday, I finished refactoring data_parser.py. Today, I am working on the conversion functions between protein
+sequence and DNA sequence. First, I need to write a function that combines protein_data and multi_amino data into 
+one data structure. i.e.: ({Y}, {A}, {'K', 'X'} ... {'I'}, {'G', 'N', 'P', 'S'})
+
+Update: Before I write any further code, I am trying to wrap my head around the algorithm I used last time around, 
+in my java implementation. Here are my findings:
+
+1. altAminoToDecodons(multi_amino) &rarr; multi_codon_data
+<br>&emsp; converts list of multi_aminos into a list of multi_codons
+2. proteinSequenceToDna(protein_sequence) &rarr; dna_sequence
+3. proteinSequenceToBinary(protein_sequence, mode : (min or max)) &rarr; dna_binary_sequence
+<br>&emsp; output is the corresponding DNA sequence with CG content either maximised or minimised. The sequence is in
+binary with a 0 : (A or T) and 1 : (C or G)
+4. overlapCalculator(minTempSequence, minTemp, maxTemp, maxLen, mode: (min or max)) &rarr; overlap_length_array
+5. Go through the DNA sequence, using the cutting information to actually perform the cut.
+
+Tuesday, 1/16/2024
 
 Today, my primary task is to document my code better. Once that is done, I may start working on implementing the protein to
 DNA conversion function
@@ -20,6 +34,14 @@ These are some of the tasks ahead of me:
 Converting protein to oligonucleotide.
 Temperature function
 
+
+Monday , 1/15/2024
+
+Daily Debrief:
+Yesterday, I completed the round trip of amino set to codon set. I finished the refactoring, and 
+both convert_from_amino_set_to_codon_set and convert_from_codon_set_to_amino_set have been completed. A roundtrip 
+test starting from an amino set, and going to a codon test has passed successfully. Perhaps I would want a round trip
+test that starts from a codon set and goes to an amino set, however I will leave this for now.
 
 Update 1: I have made some progress on documentation, I am approximately 1/3 the way through. At that point, I got sidetracked
 by wanting to set up an API using Sphinx. This is not a simple matter, and I will leave this task for a future time.

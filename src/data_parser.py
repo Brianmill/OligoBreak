@@ -1,6 +1,7 @@
 import itertools
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from collections import namedtuple
 
 CODON_TABLE = {
     'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S', 'TTC': 'F', 'TTT': 'F', 'TTA': 'L', 'TTG': 'L',
@@ -43,19 +44,17 @@ def extract_protein_sequence(protein_seq_file_path: str):
 
     Returns
     -------
-    seqRecord
-        the extracted protein information
+    Protein
+        namedtuple('name', 'sequence')
     """
     fasta_file = open(protein_seq_file_path, "r")
     protein_name = fasta_file.readline().strip()
     protein_seq = fasta_file.read().strip()
     fasta_file.close()
 
-    record = SeqRecord(
-        Seq(protein_seq),
-        name=protein_name,
-    )
-    return record
+    Protein = namedtuple('Protein', ['name', 'sequence'])
+    protein = Protein(protein_name, protein_seq)
+    return protein
 
 
 def extract_multi_amino_data(multi_amino_file_path: str):
@@ -147,6 +146,7 @@ def extract_amino_codon_dict(amino_codon_file_path: str):
         # ||.|.......|.......|
         # 11010000000100000001
 
+        # TODO convert data structure from a set into a namedtuple()
         amino_codon_dict[amino_acid_key] = {
             'num_codons': num_codons,
             'codon_set': codons,
@@ -159,8 +159,8 @@ def extract_amino_codon_dict(amino_codon_file_path: str):
 def store_protein_sequence(protein_sequence_data) -> str:
     # Converts protein data back into a String for roundtrip testing purposes
 
-    name = str(protein_sequence_data.name)
-    sequence = str(protein_sequence_data.seq)
+    name = protein_sequence_data.name
+    sequence = protein_sequence_data.sequence
     fasta_string = name + sequence
     return fasta_string
 
@@ -214,8 +214,12 @@ def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
     codon_set : set
         Corresponding DNA codon set.
     """
+    # if amino set is empty
     if not amino_set:
         return set()
+    # if there is only one amino acid in the set, simply lookup the amino acid
+    elif len(amino_set) == 1:
+        return CODON_TABLE[amino_set]
 
     # Step 1: Convert amino acid into binary representation
 
@@ -251,16 +255,16 @@ def convert_codon_set_to_amino_set(ambiguous_codons):
     for ambiguous_codon in ambiguous_codons:
         # Step 1: converting the three nucleotides from ambiguous to unambiguous
         # {'ANK'} -> {'A', 'ATCG', 'GT'}
-        unambiguous_nucleotides = [AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide]
-                                   for nucleotide in ambiguous_codon]
+        unambiguous_nucleotides = (AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide]
+                                   for nucleotide in ambiguous_codon)
 
         # Step 2: forming all possible codons through a cartesian product of nucleotides
         # {'A', 'ATCG', 'GT'} -> {'AAG', 'ATG', 'ACG', 'AGG', 'AAT', 'ATT', 'ACT', 'AGT'}
-        unambiguous_codons = [''.join(codon) for codon in itertools.product(*unambiguous_nucleotides)]
+        unambiguous_codons = (''.join(codon) for codon in itertools.product(*unambiguous_nucleotides))
 
         # Step 3: translating codons into amino acids
         # {'AAT', 'ATT', 'ACT', 'AGT'} -> {'K', 'M', 'T', 'R', 'N', 'I', 'S'}
-        amino_set.update(set([CODON_TABLE[codon] for codon in unambiguous_codons]))
+        amino_set.update(set(CODON_TABLE[codon] for codon in unambiguous_codons))
 
     return amino_set
 
@@ -270,4 +274,12 @@ def convert_protein_sequence_to_dna_sequence(protein_sequence):
 
 
 def convert_dna_sequence_to_protein_sequence(dna_sequence):
+    pass
+
+
+def convert_multi_amino_to_multi_codon_data(multi_amino_data):
+    pass
+
+
+def convert_multi_codon_to_multi_amino_data(multi_codon_data):
     pass

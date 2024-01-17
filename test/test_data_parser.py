@@ -1,12 +1,14 @@
-import sys
-
-sys.path.append("..")
+from collections import namedtuple
 import cProfile
 import itertools
 from pathlib import Path
 import string
 from src.data_parser import *
+import sys
 import unittest
+
+sys.path.append("..")
+
 
 TEST_FILES = Path(__file__).parent / 'test_files'
 
@@ -99,8 +101,31 @@ class TestDataParser(unittest.TestCase):
                 actual_amino_set,
             )
 
+    def test_protein_to_dna_roundtrip(self):
+        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
+        protein_data = extract_protein_sequence(protein_sequence_file)
+        original_protein_sequence = protein_data.sequence
+
+        dna_sequence = convert_protein_sequence_to_dna_sequence(original_protein_sequence)
+        roundtrip_protein_sequence = convert_dna_sequence_to_protein_sequence(dna_sequence)
+
+        self.assertEqual(
+            original_protein_sequence,
+            roundtrip_protein_sequence,
+        )
+
+    def test_multi_amino_to_multi_codon_roundtrip(self):
+        multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_multi_aminos.csv')
+        original_multi_amino_data = extract_multi_amino_data(multiple_amino_file)
+
+        multi_codon_data = convert_multi_amino_to_multi_codon_data(original_multi_amino_data)
+        roundtrip_multi_codon_data = convert_multi_codon_to_multi_amino_data(multi_codon_data)
+
+        self.assertEqual(
+            original_multi_amino_data,
+            roundtrip_multi_codon_data,
+        )
 
 
 if __name__ == '__main__':
     cProfile.run("unittest.main()", sort='tottime')
-
