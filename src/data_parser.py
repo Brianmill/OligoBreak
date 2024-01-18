@@ -4,7 +4,7 @@ from collections import namedtuple
 import itertools
 import numpy as np
 from math import floor
-import time
+import random
 
 CODON_TABLE = {
     'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S', 'TTC': 'F', 'TTT': 'F', 'TTA': 'L', 'TTG': 'L',
@@ -245,9 +245,6 @@ def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
     # if amino set is empty
     if not amino_set:
         return set()
-    # if there is only one amino acid in the set, simply lookup the corresponding codon
-    elif len(amino_set) == 1:
-        return CODON_TABLE[amino_set]
 
     # Step 1: Convert amino acid into binary representation
 
@@ -313,11 +310,39 @@ def convert_multi_codon_to_multi_amino_data(multi_codon_data):
     return multi_amino_data
 
 
-def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
-    codon_apportionments = apportion_aminos_to_codons(protein_sequence, codon_frequencies)
-    print(str(codon_apportionments))
+def get_nth_codon(n, codon_dict):
+    # returns the nth codon from a codon dictionary
+    cumulative_count = 0
 
-    pass
+    for codon, count in codon_dict.items():
+        cumulative_count += count
+        if n <= cumulative_count:
+            return codon
+
+
+def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
+    amino_apportionment = apportion_aminos_to_codons(protein_sequence, codon_frequencies)
+
+    codon_list = []
+    for amino_acid in protein_sequence:
+        current_amino_apportionment = amino_apportionment[amino_acid]
+        number_of_aminos_left = sum(current_amino_apportionment.values())
+        chosen_codon_index = random.randint(0, number_of_aminos_left - 1)
+
+        codon_to_be_inserted = ''
+        cumulative_count = 0
+        for codon, count in current_amino_apportionment.items():
+            cumulative_count += count
+            if chosen_codon_index <= cumulative_count:
+                codon_to_be_inserted = codon
+                current_amino_apportionment[codon] -= 1
+                if current_amino_apportionment[codon] == 0:
+                    del current_amino_apportionment[codon]
+                break
+        codon_list.append(codon_to_be_inserted)
+
+    dna_sequence = ''.join(codon_list)
+    return dna_sequence
 
 
 def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
@@ -332,7 +357,7 @@ def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
 
         codon_amounts = [float(codon_frequencies[codon]) for codon in codons]
         total_codon_amount = sum(codon_amounts)
-        
+
         divisor = total_codon_amount / amino_acid_amount
         codon_quotas = [(amount / divisor) for amount in codon_amounts]
         codon_apportionments = [floor(codon_quota) for codon_quota in codon_quotas]
@@ -351,8 +376,8 @@ def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
     return codon_allocations
 
 
-# TODO come up with how to test this function
-
-
 def convert_dna_sequence_to_protein_sequence(dna_sequence):
-    pass
+    codon_list = [dna_sequence[i:i+3] for i in range(0, len(dna_sequence), 3)]
+    amino_list = [CODON_TABLE[codon] for codon in codon_list]
+    protein_sequence = ''.join(amino_list)
+    return protein_sequence

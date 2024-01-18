@@ -79,17 +79,14 @@ class TestDataParser(unittest.TestCase):
         )
 
     def test_amino_acid_to_codon_roundtrip(self):
-        amino_acid_set = {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W',
-                          'Y'}
+        amino_acid_set = {'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+                          'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y'}
         amino_acid_combinations = set()
-        for n in range(15, 21):
+        for n in range(0, 21):
             amino_acid_combinations.update(set(itertools.combinations(amino_acid_set, n)))
-        print(len(amino_acid_combinations))
 
-        amino_acid_to_codon_dict = self.amino_acid_to_codon_dict
-        if amino_acid_to_codon_dict is None:
-            amino_acid_to_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
-            amino_acid_to_codon_dict = extract_amino_codon_dict(amino_acid_to_codon_file)
+        amino_acid_to_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
+        amino_acid_to_codon_dict = extract_amino_codon_dict(amino_acid_to_codon_file)
 
         for index, expected_amino_set in enumerate(amino_acid_combinations):
             codon_set = convert_amino_set_to_codon_set(expected_amino_set, amino_acid_to_codon_dict)
