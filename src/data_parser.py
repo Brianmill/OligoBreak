@@ -245,7 +245,7 @@ def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
     # if amino set is empty
     if not amino_set:
         return set()
-    # if there is only one amino acid in the set, simply lookup the amino acid
+    # if there is only one amino acid in the set, simply lookup the corresponding codon
     elif len(amino_set) == 1:
         return CODON_TABLE[amino_set]
 
@@ -313,8 +313,15 @@ def convert_multi_codon_to_multi_amino_data(multi_codon_data):
     return multi_amino_data
 
 
+def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
+
+    codon_apportionments = codon_apportionment(protein_sequence, codon_frequencies)
+    print(str(codon_apportionment))
+    pass
+
+
 def codon_apportionment(protein_sequence, codon_frequencies):
-# apportions codons based on codon frequencies using the hamiltonian method of apportionment
+    # apportions amino acids to codons based on codon frequencies using the Hamiltonian method of apportionment
 
     # codon amounts for all aminos
     global_codon_amounts = {}
@@ -349,12 +356,10 @@ def codon_apportionment(protein_sequence, codon_frequencies):
         for index, codon in enumerate(codons):
             global_codon_amounts[codon] = initial_apportionment[index]
 
+        return global_codon_amounts
+
 
 # TODO come up with how to test this function
-def convert_amino_acid_to_random_codon(amino, codon_frequency_table):
-    corresponding_codons = REVERSE_CODON_TABLE[amino]
-    codon_frequencies = [codon_frequency_table[codon] for codon in corresponding_codons]
-    print(amino + ', ' + str(corresponding_codons) + ', ' + str(codon_frequencies))
 
 
 def convert_dna_sequence_to_protein_sequence(dna_sequence):
