@@ -1,7 +1,10 @@
-import itertools
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from collections import namedtuple
+import itertools
+import numpy as np
+from math import floor
+import time
 
 CODON_TABLE = {
     'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S', 'TTC': 'F', 'TTT': 'F', 'TTA': 'L', 'TTG': 'L',
@@ -294,14 +297,6 @@ def convert_codon_set_to_amino_set(ambiguous_codons):
     return amino_set
 
 
-def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
-    pass
-
-
-def convert_dna_sequence_to_protein_sequence(dna_sequence):
-    pass
-
-
 def convert_multi_amino_to_multi_codon_data(multi_amino_data, aminos_to_codons_mapping):
     multi_codon_data = {}
     for position, aminos in multi_amino_data.items():
@@ -316,3 +311,51 @@ def convert_multi_codon_to_multi_amino_data(multi_codon_data):
         aminos = convert_codon_set_to_amino_set(codons)
         multi_amino_data[position] = aminos
     return multi_amino_data
+
+
+def codon_apportionment(protein_sequence, codon_frequencies):
+# apportions codons based on codon frequencies using the hamiltonian method of apportionment
+
+    # codon amounts for all aminos
+    global_codon_amounts = {}
+    for amino in "VYWTSPFMKLIHGEQCDNRA":
+        # determining the number of occurrences of the given amino
+        amino_amount = protein_sequence.count(amino)
+
+        codons = REVERSE_CODON_TABLE[amino]
+
+        codon_amounts = [float(codon_frequencies[codon]) for codon in codons]
+        total_codon_amount = sum(codon_amounts)
+
+        # divisor = total_population / number_of_seats
+        divisor = total_codon_amount / amino_amount
+
+        # quota = population / divisor
+        quotas = [(amount / divisor) for amount in codon_amounts]
+
+        # initial = floor(quota)
+        initial_apportionment = [floor(quota) for quota in quotas]
+
+        priority_scores = [quotas[i] - initial_apportionment[i] for i in range(len(quotas))]
+
+        remaining_aminos = amino_amount - sum(initial_apportionment)
+
+        while remaining_aminos > 0:
+            max_index = priority_scores.index(max(priority_scores))
+            initial_apportionment[max_index] += 1
+            priority_scores[max_index] = 0
+            remaining_aminos -= 1
+
+        for index, codon in enumerate(codons):
+            global_codon_amounts[codon] = initial_apportionment[index]
+
+
+# TODO come up with how to test this function
+def convert_amino_acid_to_random_codon(amino, codon_frequency_table):
+    corresponding_codons = REVERSE_CODON_TABLE[amino]
+    codon_frequencies = [codon_frequency_table[codon] for codon in corresponding_codons]
+    print(amino + ', ' + str(corresponding_codons) + ', ' + str(codon_frequencies))
+
+
+def convert_dna_sequence_to_protein_sequence(dna_sequence):
+    pass
