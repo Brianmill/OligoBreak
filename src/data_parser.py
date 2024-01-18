@@ -314,49 +314,41 @@ def convert_multi_codon_to_multi_amino_data(multi_codon_data):
 
 
 def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
+    codon_apportionments = apportion_aminos_to_codons(protein_sequence, codon_frequencies)
+    print(str(codon_apportionments))
 
-    codon_apportionments = codon_apportionment(protein_sequence, codon_frequencies)
-    print(str(codon_apportionment))
     pass
 
 
-def codon_apportionment(protein_sequence, codon_frequencies):
+def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
     # apportions amino acids to codons based on codon frequencies using the Hamiltonian method of apportionment
+    # The following video was heavily relied on to write the function: https://www.youtube.com/watch?v=YWfEqWLz9pc
 
-    # codon amounts for all aminos
-    global_codon_amounts = {}
-    for amino in "VYWTSPFMKLIHGEQCDNRA":
-        # determining the number of occurrences of the given amino
-        amino_amount = protein_sequence.count(amino)
+    codon_allocations = {}
 
-        codons = REVERSE_CODON_TABLE[amino]
+    for amino_acid in "VYWTSPFMKLIHGEQCDNRA":
+        amino_acid_amount = protein_sequence.count(amino_acid)
+        codons = REVERSE_CODON_TABLE[amino_acid]
 
         codon_amounts = [float(codon_frequencies[codon]) for codon in codons]
         total_codon_amount = sum(codon_amounts)
+        
+        divisor = total_codon_amount / amino_acid_amount
+        codon_quotas = [(amount / divisor) for amount in codon_amounts]
+        codon_apportionments = [floor(codon_quota) for codon_quota in codon_quotas]
+        codon_priority_scores = [codon_quotas[i] - codon_apportionments[i] for i in range(len(codon_quotas))]
 
-        # divisor = total_population / number_of_seats
-        divisor = total_codon_amount / amino_amount
-
-        # quota = population / divisor
-        quotas = [(amount / divisor) for amount in codon_amounts]
-
-        # initial = floor(quota)
-        initial_apportionment = [floor(quota) for quota in quotas]
-
-        priority_scores = [quotas[i] - initial_apportionment[i] for i in range(len(quotas))]
-
-        remaining_aminos = amino_amount - sum(initial_apportionment)
-
+        remaining_aminos = amino_acid_amount - sum(codon_apportionments)
         while remaining_aminos > 0:
-            max_index = priority_scores.index(max(priority_scores))
-            initial_apportionment[max_index] += 1
-            priority_scores[max_index] = 0
+            max_index = codon_priority_scores.index(max(codon_priority_scores))
+            codon_apportionments[max_index] += 1
+            codon_priority_scores[max_index] = 0
             remaining_aminos -= 1
 
-        for index, codon in enumerate(codons):
-            global_codon_amounts[codon] = initial_apportionment[index]
+        amino_codon_amounts = {codons[i]: codon_apportionments[i] for i in range(len(codons))}
+        codon_allocations[amino_acid] = amino_codon_amounts
 
-        return global_codon_amounts
+    return codon_allocations
 
 
 # TODO come up with how to test this function
