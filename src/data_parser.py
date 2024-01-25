@@ -18,27 +18,46 @@ CODON_TABLE = {
 }
 
 REVERSE_CODON_TABLE = {
-    'W': ['TGG'],
-    'M': ['ATG'],
-    'H': ['CAC', 'CAT'],
-    'Q': ['CAA', 'CAG'],
-    'N': ['AAC', 'AAT'],
-    'K': ['AAA', 'AAG'],
+    'A': ['GCA', 'GCC', 'GCG', 'GCT'],
+    'C': ['TGC', 'TGT'],
     'D': ['GAC', 'GAT'],
     'E': ['GAA', 'GAG'],
-    'Y': ['TAC', 'TAT'],
     'F': ['TTC', 'TTT'],
-    'C': ['TGC', 'TGT'],
+    'G': ['GGA', 'GGC', 'GGG', 'GGT'],
+    'H': ['CAC', 'CAT'],
     'I': ['ATA', 'ATC', 'ATT'],
-    '*': ['TAA', 'TAG', 'TGA'],
+    'K': ['AAA', 'AAG'],
+    'L': ['TTA', 'TTG', 'CTA', 'CTC', 'CTG', 'CTT'],
+    'M': ['ATG'],
+    'N': ['AAC', 'AAT'],
     'P': ['CCA', 'CCC', 'CCG', 'CCT'],
+    'Q': ['CAA', 'CAG'],
+    'R': ['CGA', 'CGC', 'CGG', 'CGT', 'AGA', 'AGG'],
+    'S': ['TCA', 'TCC', 'TCG', 'TCT', 'AGC', 'AGT'],
     'T': ['ACA', 'ACC', 'ACG', 'ACT'],
     'V': ['GTA', 'GTC', 'GTG', 'GTT'],
-    'A': ['GCA', 'GCC', 'GCG', 'GCT'],
-    'G': ['GGA', 'GGC', 'GGG', 'GGT'],
-    'S': ['TCA', 'TCC', 'TCG', 'TCT', 'AGC', 'AGT'],
-    'L': ['TTA', 'TTG', 'CTA', 'CTC', 'CTG', 'CTT'],
-    'R': ['CGA', 'CGC', 'CGG', 'CGT', 'AGA', 'AGG']
+    'W': ['TGG'],
+    'Y': ['TAC', 'TAT'],
+    '*': ['TAA', 'TAG', 'TGA'],
+}
+
+CODON_WITH_LOWEST_CG_CONTENT = {
+    'A': '110', 'C': '010', 'D': '100', 'E': '100',
+    'F': '000', 'G': '110', 'H': '100', 'I': '000',
+    'K': '000', 'L': '000', 'M': '001', 'N': '000',
+    'P': '110', 'Q': '100', 'R': '010', 'S': '010',
+    'T': '010', 'V': '100', 'W': '011', 'Y': '000',
+    '*': '000',
+}
+
+CODON_WITH_HIGHEST_CG_CONTENT = {
+    'A': '111', 'C': '011', 'D': '101', 'E': '101',
+    'F': '001', 'G': '111', 'H': '101', 'I': '001',
+    'K': '001', 'L': '101', 'M': '001', 'N': '001',
+    'P': '111', 'Q': '101', 'R': '111', 'S': '011',
+    'T': '011', 'V': '101', 'W': '011', 'Y': '001',
+    # * can be coded as 010, but this does not matter much, since it is a stop codon after all
+    '*': '001',
 }
 
 # a dictionary that maps ambiguous DNA nucleotides to unambiguous DNA nucleotides
@@ -228,21 +247,6 @@ def store_organism_codon_frequencies(codon_per_mille_data) -> str:
 
 
 def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
-    """Converts an amino acid set into a corresponding DNA codon set.
-
-    Parameters
-    ----------
-    amino_set : set
-        Set of amino acids.
-    aminos_to_codons_mapping : dict
-        Mapping of amino acid set to codon set.
-
-    Returns
-    -------
-    codon_set : set
-        Corresponding DNA codon set.
-    """
-    # if amino set is empty
     if not amino_set:
         return set()
 
@@ -263,25 +267,11 @@ def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
 
 
 def convert_codon_set_to_amino_set(ambiguous_codons):
-    """Returns the corresponding amino acid set for a set of DNA codons
-
-    Parameters
-    ----------
-    ambiguous_codons : set
-        A set of codons made up of ambiguous DNA nucleotides.
-
-    Returns
-    -------
-    aminos : set
-        Corresponding amino acid set.
-    """
-
     amino_set = set()
     for ambiguous_codon in ambiguous_codons:
         # Step 1: converting the three nucleotides from ambiguous to unambiguous
         # {'ANK'} -> {'A', 'ATCG', 'GT'}
-        unambiguous_nucleotides = (AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide]
-                                   for nucleotide in ambiguous_codon)
+        unambiguous_nucleotides = (AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide] for nucleotide in ambiguous_codon)
 
         # Step 2: forming all possible codons through a cartesian product of nucleotides
         # {'A', 'ATCG', 'GT'} -> {'AAG', 'ATG', 'ACG', 'AGG', 'AAT', 'ATT', 'ACT', 'AGT'}
@@ -295,6 +285,8 @@ def convert_codon_set_to_amino_set(ambiguous_codons):
 
 
 def convert_multi_amino_to_multi_codon_data(multi_amino_data, aminos_to_codons_mapping):
+    # converts a list of multi amino positions to a list of multi codon positions
+
     multi_codon_data = {}
     for position, aminos in multi_amino_data.items():
         codons = convert_amino_set_to_codon_set(aminos, aminos_to_codons_mapping)
@@ -303,6 +295,8 @@ def convert_multi_amino_to_multi_codon_data(multi_amino_data, aminos_to_codons_m
 
 
 def convert_multi_codon_to_multi_amino_data(multi_codon_data):
+    # converts a list of multi codon positions to a list of multi amino positions
+
     multi_amino_data = {}
     for position, codons in multi_codon_data.items():
         aminos = convert_codon_set_to_amino_set(codons)
@@ -310,16 +304,7 @@ def convert_multi_codon_to_multi_amino_data(multi_codon_data):
     return multi_amino_data
 
 
-def get_nth_codon(n, codon_dict):
-    # returns the nth codon from a codon dictionary
-    cumulative_count = 0
-
-    for codon, count in codon_dict.items():
-        cumulative_count += count
-        if n <= cumulative_count:
-            return codon
-
-
+# TODO refactor function to reduce nesting
 def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
     amino_apportionment = apportion_aminos_to_codons(protein_sequence, codon_frequencies)
 
@@ -350,7 +335,6 @@ def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
     # The following video was heavily relied on to write the function: https://www.youtube.com/watch?v=YWfEqWLz9pc
 
     codon_allocations = {}
-
     for amino_acid in "VYWTSPFMKLIHGEQCDNRA":
         amino_acid_amount = protein_sequence.count(amino_acid)
         codons = REVERSE_CODON_TABLE[amino_acid]
@@ -377,7 +361,78 @@ def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
 
 
 def convert_dna_sequence_to_protein_sequence(dna_sequence):
-    codon_list = [dna_sequence[i:i+3] for i in range(0, len(dna_sequence), 3)]
+    print(dna_sequence)
+    codon_list = [dna_sequence[i:i + 3] for i in range(0, len(dna_sequence), 3)]
     amino_list = [CODON_TABLE[codon] for codon in codon_list]
     protein_sequence = ''.join(amino_list)
     return protein_sequence
+
+
+def convert_protein_to_high_melting_point_dna(protein_sequence):
+    codon_list = [CODON_WITH_HIGHEST_CG_CONTENT[amino] for amino in protein_sequence]
+    print(codon_list)
+    dna_sequence = ''.join(codon_list)
+    return dna_sequence
+
+
+def convert_protein_to_low_melting_point_dna(protein_sequence):
+    codon_list = [CODON_WITH_LOWEST_CG_CONTENT[amino] for amino in protein_sequence]
+    dna_sequence = ''.join(codon_list)
+    return dna_sequence
+
+
+def calculate_min_overlap_matrix(min_temp, max_temp, max_len, low_dna, high_dna):
+    length = len(low_dna)
+    temp_range = max_temp - min_temp
+    minimum_overlap_array = np.zeros((temp_range, length)).astype(int)
+
+    # current_overlap = 0
+    # for every temp:
+    #   for every index:
+    #       if current_overlap == max_overlap:
+    #           run fail : (
+    #       else if curr_overlap reaches beyond the beginning of the sequence:
+    #           run fail : (
+    #       else if curr_overlap < min_overlap:
+    #           curr_overlap++
+    #           recalculate CG content of overlap
+    #       else:
+    #           curr_overlap++
+    #           recalculate CG content of overlap
+    #           calculate current melting temperature
+    #               if current melting temperature >= desired melting temp:
+    #                   set the overlap
+
+    with np.printoptions(threshold=np.inf, linewidth=10000):
+        print(minimum_overlap_array)
+
+    print(minimum_overlap_array)
+
+    pass
+
+
+def calculate_max_overlap_matrix():
+    # current_overlap = 0
+    # for every temp:
+    #   for every index:
+    #       if current_overlap == max_overlap:
+    #           run fail : (
+    #       else if curr_overlap reaches beyond the beginning of the sequence:
+    #           run fail : (
+    #       else if curr_overlap < min_overlap:
+    #           curr_overlap++
+    #           recalculate CG content of overlap
+    #       else:
+    #           curr_overlap++
+    #           recalculate CG content of overlap
+    #           calculate current melting temperature
+    #               if current melting temperature >= desired melting temp:
+    #                   set the overlap
+
+    pass
+
+
+def calculate_dna_melting_temp(cg_amount, dna_length):
+    # basic melting temperature equation obtained from http://biotools.nubic.northwestern.edu/OligoCalc.html#helpthermo
+    melting_temperature = 64.9 + 41 * (cg_amount - 16.4) / dna_length
+    return melting_temperature

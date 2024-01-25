@@ -1,8 +1,17 @@
 
-Tuesday, 1/16/2024
+Tuesday, 1/23/2024
 
-Documenting the code is taking longer than expected.
+Over Thursday, Friday, and Saturday I made a lot of progress. I now can fully convert a protein-sequence to a
+dna-sequence and vis-versa. It is now time to begin implementing the actual algorithm portion of the program.
+I am very nervous for this part, and we will see how it goes.
+\
 
+
+Thursday, 1/18/2024
+
+Daily Debrief:
+Yesterday, I completed the codon_apportionment function. Today, I will hopefully complete 
+the rest of the protein_sequence_to_dna_sequence function
 
 Wednesday, 1/17/2024
 

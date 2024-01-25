@@ -1,6 +1,7 @@
 from collections import namedtuple
 import cProfile
 import itertools
+import pandas as pd
 from pathlib import Path
 import string
 from src.data_parser import *
@@ -96,6 +97,7 @@ class TestDataParser(unittest.TestCase):
                 actual_amino_set,
             )
 
+    # TODO write a test that checks if DNA produced through reverse translation has right codon frequencies.
     def test_protein_to_dna_roundtrip(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
         protein_data = extract_protein_sequence(protein_sequence_file)
@@ -126,6 +128,34 @@ class TestDataParser(unittest.TestCase):
             original_multi_amino_data,
             roundtrip_multi_codon_data,
         )
+
+    def test_dna_temperature_calculator(self):
+
+        file_path = str(TEST_FILES / 'primer.dat')
+        df = pd.read_csv(file_path, delimiter='\s+', header=0)
+        for ind in df.index:
+            dna_length = df['Len'][ind]
+            cg_percentage = df['%CG'][ind]
+            cg_amount = dna_length * cg_percentage
+            calculated_melting_temp = calculate_dna_melting_temp(cg_amount, dna_length)
+            expected_melting_temp = float(df['Basic'][ind])
+
+            self.assertAlmostEqual(
+                calculated_melting_temp,
+                expected_melting_temp,
+                places=1
+            )
+
+    def test_temp(self):
+        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
+        extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
+        protein_sequence = extracted_protein_sequence_data.sequence
+        high_cg_dna = convert_protein_to_high_melting_point_dna(protein_sequence)
+        low_cg_dna = convert_protein_to_low_melting_point_dna(protein_sequence)
+
+        print(high_cg_dna)
+        print(low_cg_dna)
+        overlap_ranges = calculate_overlap_range(40, 60, 100, low_cg_dna, high_cg_dna)
 
 
 if __name__ == '__main__':
