@@ -4,6 +4,7 @@ from collections import namedtuple
 import itertools
 import numpy as np
 from math import floor
+import sys
 import random
 
 CODON_TABLE = {
@@ -381,58 +382,55 @@ def convert_protein_to_low_melting_point_dna(protein_sequence):
     return dna_sequence
 
 
-def calculate_min_overlap_matrix(min_temp, max_temp, max_len, low_dna, high_dna):
-    length = len(low_dna)
-    temp_range = max_temp - min_temp
-    minimum_overlap_array = np.zeros((temp_range, length)).astype(int)
-
-    # current_overlap = 0
-    # for every temp:
-    #   for every index:
-    #       if current_overlap == max_overlap:
-    #           run fail : (
-    #       else if curr_overlap reaches beyond the beginning of the sequence:
-    #           run fail : (
-    #       else if curr_overlap < min_overlap:
-    #           curr_overlap++
-    #           recalculate CG content of overlap
-    #       else:
-    #           curr_overlap++
-    #           recalculate CG content of overlap
-    #           calculate current melting temperature
-    #               if current melting temperature >= desired melting temp:
-    #                   set the overlap
-
-    with np.printoptions(threshold=np.inf, linewidth=10000):
-        print(minimum_overlap_array)
-
-    print(minimum_overlap_array)
-
-    pass
-
-
-def calculate_max_overlap_matrix():
-    # current_overlap = 0
-    # for every temp:
-    #   for every index:
-    #       if current_overlap == max_overlap:
-    #           run fail : (
-    #       else if curr_overlap reaches beyond the beginning of the sequence:
-    #           run fail : (
-    #       else if curr_overlap < min_overlap:
-    #           curr_overlap++
-    #           recalculate CG content of overlap
-    #       else:
-    #           curr_overlap++
-    #           recalculate CG content of overlap
-    #           calculate current melting temperature
-    #               if current melting temperature >= desired melting temp:
-    #                   set the overlap
-
-    pass
-
-
+# Todo error handling: Division by 0
 def calculate_dna_melting_temp(cg_amount, dna_length):
     # basic melting temperature equation obtained from http://biotools.nubic.northwestern.edu/OligoCalc.html#helpthermo
+
+    if dna_length == 0:
+        print("Error: Division by zero is not allowed. Please provide a non-zero denominator.")
+        sys.exit(1)
+
     melting_temperature = 64.9 + 41 * (cg_amount - 16.4) / dna_length
     return melting_temperature
+
+
+def calculate_overlap(cg_dna_sequence, desired_melting_temp, dna_index):
+    # values derived from minimum and maximum recommended overlap length for Gibbs Isothermal Assembly
+    min_overlap = 20
+    max_overlap = 40
+    counter: int = 0
+    for overlap_length in range(min_overlap, max_overlap):
+
+        if dna_index - overlap_length < 0:
+            continue
+        cg_amount = cg_dna_sequence[dna_index - overlap_length: dna_index + 1].count('1')
+        calculated_melting_temp = calculate_dna_melting_temp(cg_amount, overlap_length)
+        if abs(calculated_melting_temp - desired_melting_temp) < 2.5:
+            counter = counter + 1
+
+            # return calculated_melting_temp
+
+    return counter
+
+
+def calculate_overlap_matrix(min_temp, max_temp, low_cg_dna, high_cg_dna):
+    length = len(low_cg_dna)
+    temp_range = max_temp - min_temp
+
+    minimum_overlap_matrix = np.zeros((temp_range, length)).astype(int)
+    maximum_overlap_matrix = np.zeros((temp_range, length)).astype(int)
+
+    for temp_index in range(temp_range):
+        desired_temp = min_temp + temp_index
+        for dna_index in range(length):
+            minimum_overlap = calculate_overlap(low_cg_dna, desired_temp, dna_index)
+            maximum_overlap = calculate_overlap(high_cg_dna, desired_temp, dna_index)
+
+            minimum_overlap_matrix[temp_index][dna_index] = minimum_overlap
+            maximum_overlap_matrix[temp_index][dna_index] = maximum_overlap
+
+    with np.printoptions(threshold=np.inf, linewidth=10000):
+        print(minimum_overlap_matrix)
+        print(maximum_overlap_matrix)
+
+    return minimum_overlap_matrix, maximum_overlap_matrix

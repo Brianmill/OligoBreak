@@ -1,10 +1,35 @@
 
+Friday, 1/26/2024
+
+Hello, long time no update. I have began implementing the overlap calculator. Over the last three days, I have gone
+down the rabbit hole for calculating DNA melting temperature. There are two primary ways that I could use, There is
+the basic approach, which is 64.9 + 41 * (cg_amount - 16.4) / dna_length. Then, there is the nearest neighbor approach,
+that calculates the temperature based on neighboring pairs. There is also the salt adjusted model, but that model only
+becomes more accurate for longer overlap lengths than are going to be used in this program. For now, I will use the basic
+approach. I will talk about the limitations of the approach, and what would be needed to adjust this algorithm to the 
+nearest neighbor temperature model. First off, I would have to write the new melting temperature calculator. That should
+not be too bad, and I think would only take a few days. But then how do you determine the maximum and minimum overlap range
+for a given temperature and DNA index. Now, since temperature is entirely dependent on cg_amount, I just precompute 
+the DNA sequence with the minimal and maximal cg_amount, and plug those sequences into the overlap calculator to determine
+the minimum and maximum overlap for every temperature and starting index. However, I do not know how to calculate such a
+minimum and maximum sequence for the nearest neighbor model. I believe such a solution would require dynamic programming.
+I think I would be interested in tackling it once the rest of this program is complete.
+
+For now, I will stick with the basic algorithm. The problem I am running into now, is as follows. I have calculated the
+minimum and maximum cg_content DNA strings, and have used them to compute the minimum and maximum allowable overlap matrix.
+At the moment, however, there are some position temperature coordinates that have no overlap length that melts within
+the desired temperature range. What I want to do in these cases is to repeatedly increment (or decrement) the cg count
+until I find a .... Apologies for stopping at the middle of a thought. I will run some tests to see if I can get a better
+understanding of the problem, and then get back to you.
+
+
+
 Tuesday, 1/23/2024
 
 Over Thursday, Friday, and Saturday I made a lot of progress. I now can fully convert a protein-sequence to a
 dna-sequence and vis-versa. It is now time to begin implementing the actual algorithm portion of the program.
 I am very nervous for this part, and we will see how it goes.
-\
+
 
 
 Thursday, 1/18/2024
