@@ -394,6 +394,20 @@ def calculate_dna_melting_temp(cg_amount, dna_length):
     return melting_temperature
 
 
+def compute_dna_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg):
+    """
+    dictionary keys are melting temperatures and dictionary values are lists containing all the
+    (cg_amount, overlap_length) tuples that result in the given melting temperature
+    """
+    melting_temp_dict = {}
+    for overlap_length in range(min_overlap, max_overlap + 1):
+        for cg_amount in range(min_overlap, max_overlap + 1):
+            melting_temp = int(calculate_dna_melting_temp(cg_amount, overlap_length))
+            amount_overlap_tuple = (cg_amount, overlap_length)
+            melting_temp_dict.setdefault(melting_temp, []).append(amount_overlap_tuple)
+    return melting_temp_dict
+
+
 def calculate_overlap(cg_dna_sequence, desired_melting_temp, dna_index):
     # values derived from minimum and maximum recommended overlap length for Gibbs Isothermal Assembly
     min_overlap = 20

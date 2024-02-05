@@ -146,16 +146,43 @@ class TestDataParser(unittest.TestCase):
                 places=1
             )
 
-    def test_temp(self):
+    def test_overlap_calculator(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
         extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
         protein_sequence = extracted_protein_sequence_data.sequence
         high_cg_dna = convert_protein_to_high_melting_point_dna(protein_sequence)
         low_cg_dna = convert_protein_to_low_melting_point_dna(protein_sequence)
 
-        print(high_cg_dna)
-        print(low_cg_dna)
-        overlap_ranges = calculate_overlap_range(40, 60, 100, low_cg_dna, high_cg_dna)
+    def test_compute_dna_melting_temp_dict(self):
+        min_overlap = 20
+        max_overlap = 40
+        min_cg = 0
+        max_cg = max_overlap
+        melting_temp_dict = compute_dna_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+
+        number_of_tuples_in_dict = 0
+
+        for temperature in melting_temp_dict:
+            cg_length_tuples = melting_temp_dict[temperature]
+
+            for cg_length_tuple in cg_length_tuples:
+                cg_amount = cg_length_tuple[0]
+                overlap_length = cg_length_tuple[1]
+
+                expected_temperature = int(calculate_dna_melting_temp(cg_amount, overlap_length))
+                self.assertEqual(
+                    temperature,
+                    expected_temperature
+                )
+                number_of_tuples_in_dict = number_of_tuples_in_dict + len(cg_length_tuples)
+
+        overlap_range = max_overlap - min_overlap
+        cg_range = max_cg - min_cg
+        number_of_expected_tuples = overlap_range * cg_range
+        self.assertEqual(
+            number_of_tuples_in_dict,
+            number_of_expected_tuples
+        )
 
 
 if __name__ == '__main__':
