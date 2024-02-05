@@ -146,12 +146,34 @@ class TestDataParser(unittest.TestCase):
                 places=1
             )
 
+    # Todo: test_overlap_calculator is incomplete. Possible tests would be to go in reverse order to check for 'contains'
     def test_overlap_calculator(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
         extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
         protein_sequence = extracted_protein_sequence_data.sequence
-        high_cg_dna = convert_protein_to_high_melting_point_dna(protein_sequence)
-        low_cg_dna = convert_protein_to_low_melting_point_dna(protein_sequence)
+        max_cg_dna = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
+        min_cg_dna = convert_protein_to_min_cg_dna_binary_sequence(protein_sequence)
+
+    def test_compute_cg_content_over_a_dna_sequence(self):
+        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
+        extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
+        protein_sequence = extracted_protein_sequence_data.sequence
+        max_cg_dna_binary_sequence = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
+        max_cg_amount = compute_cg_amount_over_a_cg_dna_binary_sequence(max_cg_dna_binary_sequence)
+
+        expected_sequence_length = len(max_cg_dna_binary_sequence)
+        actual_sequence_length = len(max_cg_amount)
+        self.assertEqual(
+            expected_sequence_length,
+            actual_sequence_length
+        )
+
+        expected_number_of_cg_in_dna_sequence = max_cg_amount.count('1')
+        actual_number_of_cg_in_dna_sequence = max_cg_amount[0]
+        self.assertEqual(
+            expected_number_of_cg_in_dna_sequence,
+            actual_number_of_cg_in_dna_sequence
+        )
 
     def test_compute_dna_melting_temp_dict(self):
         min_overlap = 20
