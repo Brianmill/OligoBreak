@@ -385,7 +385,7 @@ def convert_protein_to_min_cg_dna_binary_sequence(protein_sequence):
 
 
 def compute_cg_amount_over_a_cg_dna_binary_sequence(dna_binary_sequence):
-    pass
+    return []
 
 
 # Todo error handling: Division by 0

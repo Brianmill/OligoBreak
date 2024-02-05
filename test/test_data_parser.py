@@ -175,6 +175,13 @@ class TestDataParser(unittest.TestCase):
             actual_number_of_cg_in_dna_sequence
         )
 
+        expected_sum_of_cg = sum(range(0, expected_number_of_cg_in_dna_sequence + 1))
+        actual_sum_of_cg = sum(max_cg_amount)
+        self.asserEqual(
+            expected_sum_of_cg,
+            actual_sum_of_cg
+        )
+
     def test_compute_dna_melting_temp_dict(self):
         min_overlap = 20
         max_overlap = 40
