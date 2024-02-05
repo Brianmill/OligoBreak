@@ -372,7 +372,6 @@ def convert_dna_sequence_to_protein_sequence(dna_sequence):
 def convert_protein_to_max_cg_dna_binary_sequence(protein_sequence):
     # outputs a corresponding binary sequence of the DNA sequence with the minimum cg content
     codon_list = [CODON_WITH_HIGHEST_CG_CONTENT[amino] for amino in protein_sequence]
-    print(codon_list)
     dna_sequence = ''.join(codon_list)
     return dna_sequence
 
@@ -385,7 +384,14 @@ def convert_protein_to_min_cg_dna_binary_sequence(protein_sequence):
 
 
 def compute_cg_amount_over_a_cg_dna_binary_sequence(dna_binary_sequence):
-    return []
+    total_cg = 0
+    reversed_sequence = dna_binary_sequence[::-1]
+    reversed_cg_amount_list = []
+    for binary_nucleotide in reversed_sequence:
+        total_cg = total_cg + int(binary_nucleotide)
+        reversed_cg_amount_list.append(total_cg)
+    cg_amount_list = reversed_cg_amount_list[::-1]
+    return cg_amount_list
 
 
 # Todo error handling: Division by 0

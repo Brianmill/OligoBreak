@@ -159,27 +159,30 @@ class TestDataParser(unittest.TestCase):
         extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
         protein_sequence = extracted_protein_sequence_data.sequence
         max_cg_dna_binary_sequence = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
-        max_cg_amount = compute_cg_amount_over_a_cg_dna_binary_sequence(max_cg_dna_binary_sequence)
+        max_cg_amount_list = compute_cg_amount_over_a_cg_dna_binary_sequence(max_cg_dna_binary_sequence)
 
         expected_sequence_length = len(max_cg_dna_binary_sequence)
-        actual_sequence_length = len(max_cg_amount)
+        actual_sequence_length = len(max_cg_amount_list)
         self.assertEqual(
             expected_sequence_length,
-            actual_sequence_length
+            actual_sequence_length,
+            "expected and actual sequence lengths do not match"
         )
 
-        expected_number_of_cg_in_dna_sequence = max_cg_amount.count('1')
-        actual_number_of_cg_in_dna_sequence = max_cg_amount[0]
+        expected_number_of_cg_in_dna_sequence = max_cg_dna_binary_sequence.count('1')
+        actual_number_of_cg_in_dna_sequence = max_cg_amount_list[0]
         self.assertEqual(
             expected_number_of_cg_in_dna_sequence,
-            actual_number_of_cg_in_dna_sequence
+            actual_number_of_cg_in_dna_sequence,
+            "expected and actual number of total cg in the sequence do not match"
         )
 
-        expected_sum_of_cg = sum(range(0, expected_number_of_cg_in_dna_sequence + 1))
-        actual_sum_of_cg = sum(max_cg_amount)
-        self.asserEqual(
-            expected_sum_of_cg,
-            actual_sum_of_cg
+        expected_first_entry = int(max_cg_dna_binary_sequence[-1])
+        actual_first_entry =  max_cg_amount_list[-1]
+        self.assertEqual(
+            expected_first_entry,
+            actual_first_entry,
+            "expected and actual first entry do not match"
         )
 
     def test_compute_dna_melting_temp_dict(self):
