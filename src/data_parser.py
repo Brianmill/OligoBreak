@@ -1,11 +1,11 @@
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from collections import namedtuple
 import itertools
 import numpy as np
 from math import floor
-import sys
 import random
+import sys
+from typing import NamedTuple
 
 CODON_TABLE = {
     'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S', 'TTC': 'F', 'TTT': 'F', 'TTA': 'L', 'TTG': 'L',
@@ -81,6 +81,10 @@ AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP = {
 }
 
 
+class protein(NamedTuple):
+    name: str
+    sequence: str
+
 def extract_protein_sequence(protein_seq_file_path: str):
     """Extracts protein and name information from a protein FASTA file.
 
@@ -99,9 +103,8 @@ def extract_protein_sequence(protein_seq_file_path: str):
     protein_seq = fasta_file.read().strip()
     fasta_file.close()
 
-    Protein = namedtuple('Protein', ['name', 'sequence'])
-    protein = Protein(protein_name, protein_seq)
-    return protein
+    this_protein = protein(name=protein_name, sequence=protein_seq)
+    return this_protein
 
 
 def extract_multi_amino_data(multi_amino_file_path: str):
@@ -383,80 +386,85 @@ def convert_protein_to_min_cg_dna_binary_sequence(protein_sequence):
     return dna_sequence
 
 
-def compute_cg_amount_over_a_cg_dna_binary_sequence(dna_binary_sequence):
-    total_cg = 0
-    reversed_sequence = dna_binary_sequence[::-1]
-    reversed_cg_amount_list = []
-    for binary_nucleotide in reversed_sequence:
-        total_cg = total_cg + int(binary_nucleotide)
-        reversed_cg_amount_list.append(total_cg)
-    cg_amount_list = reversed_cg_amount_list[::-1]
-    return cg_amount_list
-
-
-# Todo error handling: Division by 0
 def calculate_dna_melting_temp(cg_amount, dna_length):
     # basic melting temperature equation obtained from http://biotools.nubic.northwestern.edu/OligoCalc.html#helpthermo
-
+    if dna_length < 0:
+        raise ValueError("Error: dna length cannot be negative")
     if dna_length == 0:
-        print("Error: Division by zero is not allowed. Please provide a non-zero denominator.")
-        sys.exit(1)
+        raise ZeroDivisionError("Error: Division by zero is not allowed. Please provide a non-zero denominator.")
+    if dna_length < 14:
+        at_amount = dna_length - cg_amount
+        melting_temperature = at_amount * 2 + cg_amount * 4
+        return melting_temperature
+    if dna_length >= 14:
+        melting_temperature = 64.9 + 41 * (cg_amount - 16.4) / dna_length
+        return melting_temperature
 
-    melting_temperature = 64.9 + 41 * (cg_amount - 16.4) / dna_length
-    return melting_temperature
+
+class overlap_cg_amount_entry(NamedTuple):
+    overlap_length: int
+    cg_amount: int
 
 
-def compute_dna_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg):
-    """
-    dictionary keys are melting temperatures and dictionary values are lists containing all the
-    (cg_amount, overlap_length) tuples that result in the given melting temperature
-    """
+def print_melting_temp_dict(melting_temp_dict):
+
+    # formats the melting_temp_dict in a more readable format
+    for temp, data in sorted(melting_temp_dict.items()):
+        print(f"{temp: }", end='')
+        for overlap_cg_amount_tuple in data:
+            cg_amount = overlap_cg_amount_tuple.cg_amount
+            overlap_length = overlap_cg_amount_tuple.overlap_length
+            print(f"(cg:{cg_amount}, len:{overlap_length}) ", end="")
+        print()
+
+
+def generate_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg):
+    # generates a dictionary with all possible cg_overlap pairs
     melting_temp_dict = {}
     for overlap_length in range(min_overlap, max_overlap + 1):
-        for cg_amount in range(min_overlap, max_overlap + 1):
-            melting_temp = int(calculate_dna_melting_temp(cg_amount, overlap_length))
-            amount_overlap_tuple = (cg_amount, overlap_length)
-            melting_temp_dict.setdefault(melting_temp, []).append(amount_overlap_tuple)
+        for cg_amount in range(min_cg, max_cg + 1):
+            overlap_cg_amount_tuple = overlap_cg_amount_entry(overlap_length=overlap_length, cg_amount=cg_amount)
+            melting_temp = round(calculate_dna_melting_temp(cg_amount, overlap_length))
+            melting_temp_dict.setdefault(melting_temp, []).append(overlap_cg_amount_tuple)
+    print_melting_temp_dict(melting_temp_dict)
     return melting_temp_dict
 
 
-def calculate_overlap(cg_dna_sequence, desired_melting_temp, dna_index):
-    # values derived from minimum and maximum recommended overlap length for Gibbs Isothermal Assembly
-    min_overlap = 20
-    max_overlap = 40
-    counter: int = 0
-    for overlap_length in range(min_overlap, max_overlap):
+def generate_melting_temp_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap):
+    if len(dna_binary_sequence) < max_overlap:
+        raise ValueError(
+            str(f"Error: max_overlap cannot be greater than DNA length. {max_overlap} > {len(dna_binary_sequence)}"))
+    if max_overlap < min_overlap:
+        raise ValueError(str(f"Error: max_overlap must be greater than min_overlap. {max_overlap} >! {min_overlap}"))
 
-        if dna_index - overlap_length < 0:
-            continue
-        cg_amount = cg_dna_sequence[dna_index - overlap_length: dna_index + 1].count('1')
-        calculated_melting_temp = calculate_dna_melting_temp(cg_amount, overlap_length)
-        if abs(calculated_melting_temp - desired_melting_temp) < 2.5:
-            counter = counter + 1
+    cg_amount = 0
+    # sequence is reversed, since overlaps start from the end of the sequence and extend backward
+    reversed_sequence = dna_binary_sequence[::-1]
+    temperature_dict = {}
+    for dna_index, binary_nucleotide in enumerate(reversed_sequence):
+        overlap_length = dna_index + 1
+        cg_amount = cg_amount + int(binary_nucleotide)
+        if min_overlap <= overlap_length <= max_overlap + 1:
+            melting_temperature = round(calculate_dna_melting_temp(cg_amount, overlap_length))
+            overlap_cg_amount_tuple = overlap_cg_amount_entry(overlap_length=overlap_length, cg_amount=cg_amount)
+            temperature_dict.setdefault(melting_temperature, []).append(overlap_cg_amount_tuple)
+    return temperature_dict
 
-            # return calculated_melting_temp
 
-    return counter
+# attempt at creating an algorithm that generates all data needed to perform dynamic programming
+# def generate_all_melting_temperatures(dna_binary_sequence, min_overlap, max_overlap)
 
+def calculate_min_and_max_temps(melting_temp_dict, min_cg_list, max_cg_list, min_temp, max_temp, min_overlap, max_overlap):
+    # for every temperature
+    #   min_tuple = min_dict[temp]
+    #   max_tuple = max_dict[temp]
+    for index in range(0, len(min_cg_list - 40)):
+        current_min_cg_sequence = min_cg_list[index, index + max_overlap]
+        current_max_cg_sequence = max_cg_list[index, index + max_overlap]
 
-def calculate_overlap_matrix(min_temp, max_temp, low_cg_dna, high_cg_dna):
-    length = len(low_cg_dna)
-    temp_range = max_temp - min_temp
+        current_minimum_temp_dict = generate_melting_temp_dict_from_sequence(current_min_cg_sequence, min_overlap, max_overlap)
+        current_minimum_temp_dict = generate_melting_temp_dict_from_sequence(current_min_cg_sequence, min_overlap, max_overlap)
 
-    minimum_overlap_matrix = np.zeros((temp_range, length)).astype(int)
-    maximum_overlap_matrix = np.zeros((temp_range, length)).astype(int)
-
-    for temp_index in range(temp_range):
-        desired_temp = min_temp + temp_index
-        for dna_index in range(length):
-            minimum_overlap = calculate_overlap(low_cg_dna, desired_temp, dna_index)
-            maximum_overlap = calculate_overlap(high_cg_dna, desired_temp, dna_index)
-
-            minimum_overlap_matrix[temp_index][dna_index] = minimum_overlap
-            maximum_overlap_matrix[temp_index][dna_index] = maximum_overlap
-
-    with np.printoptions(threshold=np.inf, linewidth=10000):
-        print(minimum_overlap_matrix)
-        print(maximum_overlap_matrix)
-
-    return minimum_overlap_matrix, maximum_overlap_matrix
+        print(current_minimum_temp_dict)
+        print(current_minimum_temp_dict)
+    pass

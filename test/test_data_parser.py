@@ -146,20 +146,26 @@ class TestDataParser(unittest.TestCase):
                 places=1
             )
 
-    # Todo: test_overlap_calculator is incomplete. Possible tests would be to go in reverse order to check for 'contains'
-    def test_overlap_calculator(self):
-        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
-        extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
-        protein_sequence = extracted_protein_sequence_data.sequence
-        max_cg_dna = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
-        min_cg_dna = convert_protein_to_min_cg_dna_binary_sequence(protein_sequence)
+    # Todo: write test_convert_protein_to_max_cg_dna_binary_sequence function
+    #  Possible tests would be to go in reverse order to check for 'contains'
 
-    def test_compute_cg_content_over_a_dna_sequence(self):
+    def test_compute_overlap_temperature_dict(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
         extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
         protein_sequence = extracted_protein_sequence_data.sequence
         max_cg_dna_binary_sequence = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
-        max_cg_amount_list = compute_cg_amount_over_a_cg_dna_binary_sequence(max_cg_dna_binary_sequence)
+        max_cg_amount_list = compute_cumulative_number_of_cg(max_cg_dna_binary_sequence)
+
+        # check that there are the expected number of entries in the dictionary.
+        # check that the lengths do not exceed the maximum length
+        # check that the lengths are not smaller than the minimum length
+
+    def test_compute_cumulative_number_of_cg(self):
+        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
+        extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
+        protein_sequence = extracted_protein_sequence_data.sequence
+        max_cg_dna_binary_sequence = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
+        max_cg_amount_list = compute_cumulative_number_of_cg(max_cg_dna_binary_sequence)
 
         expected_sequence_length = len(max_cg_dna_binary_sequence)
         actual_sequence_length = len(max_cg_amount_list)
@@ -178,43 +184,177 @@ class TestDataParser(unittest.TestCase):
         )
 
         expected_first_entry = int(max_cg_dna_binary_sequence[-1])
-        actual_first_entry =  max_cg_amount_list[-1]
+        actual_first_entry = max_cg_amount_list[-1]
         self.assertEqual(
             expected_first_entry,
             actual_first_entry,
             "expected and actual first entry do not match"
         )
 
-    def test_compute_dna_melting_temp_dict(self):
+    def test_generate_temperature_dict(self):
+        # makes sure that the calculated and expected temperatures match
         min_overlap = 20
         max_overlap = 40
         min_cg = 0
         max_cg = max_overlap
-        melting_temp_dict = compute_dna_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+        cg_overlap_temperature_dict = generate_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
 
         number_of_tuples_in_dict = 0
 
-        for temperature in melting_temp_dict:
-            cg_length_tuples = melting_temp_dict[temperature]
-
+        for temperature in cg_overlap_temperature_dict:
+            cg_length_tuples = cg_overlap_temperature_dict[temperature]
             for cg_length_tuple in cg_length_tuples:
-                cg_amount = cg_length_tuple[0]
-                overlap_length = cg_length_tuple[1]
+                cg_amount = cg_length_tuple.cg_amount
+                overlap_length = cg_length_tuple.overlap_length
 
-                expected_temperature = int(calculate_dna_melting_temp(cg_amount, overlap_length))
+                expected_temperature = round(calculate_dna_melting_temp(cg_amount, overlap_length))
                 self.assertEqual(
-                    temperature,
-                    expected_temperature
+                    expected_temperature,
+                    temperature
                 )
-                number_of_tuples_in_dict = number_of_tuples_in_dict + len(cg_length_tuples)
 
-        overlap_range = max_overlap - min_overlap
-        cg_range = max_cg - min_cg
+    def test_generate_temp_dict_entries(self):
+        # checks to see if there are the correct number of entries in the temperature dictionary
+        min_overlap = 20
+        max_overlap = 40
+        min_cg = 0
+        max_cg = max_overlap
+        cg_overlap_temperature_dict = generate_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+
+        number_of_tuples_in_dict = 0
+        for temperature, cg_length_tuples in cg_overlap_temperature_dict.items():
+            number_of_tuples_in_dict = number_of_tuples_in_dict + len(cg_length_tuples)
+
+        overlap_range = max_overlap - min_overlap + 1
+        cg_range = max_cg - min_cg + 1
         number_of_expected_tuples = overlap_range * cg_range
         self.assertEqual(
-            number_of_tuples_in_dict,
-            number_of_expected_tuples
+            number_of_expected_tuples,
+            number_of_tuples_in_dict
         )
+
+    def test_generate_temp_dict_sorted(self):
+        # checks to see if the entries for a given temperature key are stored in the correct order
+        # each entry should have a longer length than the previous.
+        # There are other patterns that the data should conform to, but I don't feel like articulating
+        # those patterns and then coding up a test for them.
+
+        min_overlap = 20
+        max_overlap = 40
+        min_cg = 0
+        max_cg = max_overlap
+        cg_overlap_temperature_dict = generate_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+        for temperature, cg_length_tuples in cg_overlap_temperature_dict.items():
+            for index in range(len(cg_length_tuples) - 1):
+                this_cg_length_tuple = cg_length_tuples[index]
+                next_cg_length_tuple = cg_length_tuples[index + 1]
+
+                this_length = this_cg_length_tuple.overlap_length
+                next_length = next_cg_length_tuple.overlap_length
+
+                self.assertTrue(this_length <= next_length)
+
+    def test_generate_melting_temp_dict_from_sequence(self):
+        dna_binary_sequence = '0100101101010101101010101010100011000010'
+        min_overlap = 20
+        max_overlap = 40
+        melting_temp_dict = generate_melting_temp_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap)
+        expected_number_of_entries = max_overlap - min_overlap + 1
+        actual_number_of_entries = 0
+        for temp, entry in melting_temp_dict.items():
+            actual_number_of_entries = actual_number_of_entries + len(entry)
+        self.assertEqual(
+            expected_number_of_entries,
+            actual_number_of_entries
+        )
+
+    def test_generate_melting_temp_dict_from_sequence_with_insufficient_sequence_size(self):
+        dna_binary_sequence = '0100101101010101101010101010100011000010'
+        min_overlap = 20
+        max_overlap = 40
+        self.assertRaises(ValueError, generate_melting_temp_dict_from_sequence, dna_binary_sequence, min_overlap,
+                          max_overlap)
+
+    def test_generate_melting_temp_dict_from_sequence_with_max_overlap_greater_than_min_overlap(self):
+        dna_binary_sequence = '010010110101010110101010101010001100001'
+        min_overlap = 40
+        max_overlap = 20
+        self.assertRaises(ValueError, generate_melting_temp_dict_from_sequence, dna_binary_sequence, min_overlap,
+                          max_overlap)
+
+    def test_generate_melting_temp_dict_from_sequence_ensuring_that_sequence_is_reversed(self):
+        dna_binary_sequence = '0100101101010101101010101010100011000010'
+        min_overlap = 20
+        max_overlap = 40
+
+        reversed_sequence = dna_binary_sequence[::-1]
+        expected_cg_amount_array = []
+        num_cg = 0
+        for dna_index, binary_nucleotide in enumerate(reversed_sequence):
+            num_cg = num_cg + int(binary_nucleotide)
+            overlap_length = dna_index + 1
+            if min_overlap <= overlap_length <= max_overlap:
+                expected_cg_amount_array.append(num_cg)
+
+        actual_cg_amount_array = []
+        melting_temp_dict = generate_melting_temp_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap)
+        for melting_temp, cg_overlap_tuple in melting_temp_dict.items():
+            cg_amount = cg_overlap_tuple.cg_amount
+            actual_cg_amount_array.append(cg_amount)
+
+        print(expected_cg_amount_array)
+        print(actual_cg_amount_array)
+        self.assertCountEqual(
+            expected_cg_amount_array,
+            actual_cg_amount_array
+        )
+
+    # ToDo: Write a test to ensure that the sequence is infact reversed
+    def test_compute_allowable_overlaps_dict(self):
+        min_overlap = 20
+        max_overlap = 40
+        min_cg = 0
+        max_cg = max_overlap
+
+        protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
+        extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
+        protein_sequence = extracted_protein_sequence_data.sequence
+
+        max_cg_dna_binary_sequence = convert_protein_to_max_cg_dna_binary_sequence(protein_sequence)
+        min_cg_dna_binary_sequence = convert_protein_to_min_cg_dna_binary_sequence(protein_sequence)
+
+        melting_temp_dict = generate_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+        min_cg_list = compute_cumulative_number_of_cg(min_cg_dna_binary_sequence[0:41])
+        max_cg_list = compute_cumulative_number_of_cg(max_cg_dna_binary_sequence[0:41])
+        min_temp = 40
+        max_temp = 60
+
+        filter_melting_temp_dict(melting_temp_dict, min_cg_list, max_cg_list, min_temp, max_temp)
+
+        print(min_cg_list)
+        print(max_cg_list)
+        for temp in melting_temp_dict.items():
+            print(temp)
+
+        melting_temp_list = []
+        print("sdjlkfjsdkjfsdlkfjsd")
+        for index, cg_amount in enumerate(max_cg_list):
+            overlap_length = len(min_cg_list) - index - 1
+            print(f"({overlap_length}, {cg_amount}),", end='')
+
+        print("jskfldfjsldkjflfsdjfdslkj")
+
+        min_melting_temp_dict = {}
+        for index, cg_amount in enumerate(max_cg_list):
+            overlap_length = len(min_cg_list) - index - 1
+            if overlap_length == 0:
+                continue
+            melting_temp = int(calculate_dna_melting_temp(cg_amount, overlap_length))
+            amount_overlap_tuple = (overlap_length, cg_amount)
+            min_melting_temp_dict.setdefault(melting_temp, []).append(amount_overlap_tuple)
+
+        for temp in min_melting_temp_dict.items():
+            print(temp)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,123 @@
 
+
+
+Monday, 3/4/2024
+
+Propective Algorithm:
+
+1. Get the first 40 nucleotides of the sequence.
+2. get the minimum and maximum melting temperatures of each length, 20 - 40
+3. Shift the 40 long window over by 1 nucleotide?
+
+Sunday, 3/3/2024
+
+I have the following function: generate_melting_temp_dict_from_sequence()
+
+My question is, why do I want to generate a melting temp dict from a sequence in the first place.
+
+So basically,
+
+for every overlap end:
+   for every overlap start:
+      calculate min and max melting temperature?
+      
+
+What do I want?
+
+For every given temperature and starting? overlap, what are all the possible ending overlaps.
+
+Thursday:
+
+1. Compute_temp_dict
+2. calculate min_temp_dict and max_temp_dict for every position for lengths 20 - 40
+3. filter global_temp_dict using min and max temp_dict for every position.
+4. Now we have allowable overlaps for every position and temperature
+
+One limitation: Overlap sequences are generated that have CG content that is well below or well above the 
+standard cg amount range.
+
+THere are many temperature dictionaries, and I need to come up with a standard naming convention so that I do
+not confuse them all.
+
+1. global_temperature_cg_overlap_dict: temp dict for all deisred overlaps and all desired cg_content
+2. positional_min_temperature_cg_overlap_dict:
+3. positional_max_temperature_cg_overlap_dict
+4. positional_filtered_temperature_cg_overlap_dict:
+5. temperature_cg_overlap_dict_array: Array of positional_filtered_temperature_cg_overlap_dicts
+
+
+
+Then, there will be an array of positional_filtered_temperature_dict, each position will have one dictionary. 
+
+Tuesday, 2/6/2024
+
+I finished function that determines minimum and maximum cg_amount for any position yesterday. However, I would rather that it \
+
+
+
+Monday, 2/5/2024
+
+Yesterday, I successfully tested the compute_melting_temp_dict function. Today, I will make the next function in the sequence.
+This function takes in as input the melting_temp_dict, as well as the minimum and maximum melting temperature binary sequences.
+The function will filter the values from the melting_temp_dict that are within bounds of the minimum and maximum allowable
+cg_content. 
+
+However, this function is a bit too complex. Really, the binary format of the minimum and maximum dna sequences is very
+unwieldy. I would like to refactor those functions to instead output a list of numbers that correspond to the total number
+of cg found so far.
+
+For example. If the function got "GTCCGAT" as input. It would give [4, 3, 3, 2, 1, 0, 0] as output. This makes the minimum 
+and maximum cg_amount for any given position more readily available, as it does not have to be calculated from a binary 
+dna sequence at the time the information is needed.
+
+Sunday, 2/4/2024
+
+Today, I will try testing the dna melting temp dict.
+
+Thursday, 2/1/2024
+
+Melting temperature as a function of overlap length and cg_content with overlap on the x-axis and
+cg_content on the y-axis.
+
+The first 40 nucleotides of the reverse translation DNA from the ferrodoxin_oxidoreduxase.fasta file were used. <br>
+low_cg_dna: "0010101000100000101000001001001000000000" <br>
+high_cg_dna: "0010111010110011111011011011011010011010" <br>
+      40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20  <br>
+1  [  __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+2  [  __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+3  [  __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+4  [  __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ 38 37 ]<br>
+5  [  __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ 42 41 40 39 ]<br>
+6  [  __ __ __ __ __ __ __ __ __ __ __ 48 48 47 46 46 45 44 43 42 41 ]<br>
+7  [  __ __ __ __ __ __ __ 51 51 51 50 50 49 49 48 47 47 46 45 44 43 ]<br>
+8  [  __ __ __ __ __ 53 53 53 52 52 52 51 51 50 50 49 48 48 47 46 45 ]<br>
+9  [  __ __ __ 55 55 55 54 54 54 53 53 53 52 52 51 51 50 49 49 48 47 ]<br>
+10 [  57 57 56 56 56 56 55 55 55 55 54 54 54 53 53 52 52 51 51 50 49 ]<br>
+11 [  58 58 57 57 57 57 57 56 56 56 56 55 55 55 54 54 53 53 52 52 51 ]<br>
+12 [  59 59 59 58 58 58 58 58 57 57 57 57 56 56 56 56 55 55 54 54 53 ]<br>
+13 [  60 60 60 60 59 59 59 59 59 59 58 58 58 58 57 57 57 57 56 __ __ ]<br>
+14 [  61 61 61 61 61 60 60 60 60 60 60 60 59 59 59 59 59 58 __ __ __ ]<br>
+15 [  62 62 62 62 62 62 62 61 61 61 61 61 61 61 61 60 60 __ __ __ __ ]<br>
+16 [  63 63 63 63 63 63 63 63 63 63 62 62 62 62 62 62 __ __ __ __ __ ]<br>
+17 [  64 64 64 64 64 64 64 64 64 64 64 64 64 64 64 __ __ __ __ __ __ ]<br>
+18 [  65 65 65 65 65 65 65 65 65 65 65 65 __ __ __ __ __ __ __ __ __ ]<br>
+19 [  66 66 66 66 66 66 66 66 66 67 67 __ __ __ __ __ __ __ __ __ __ ]<br>
+20 [  67 67 67 67 67 67 68 68 68 __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+21 [  68 68 68 68 69 69 69 __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+22 [  69 69 69 69 70 70 __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+23 [  70 70 70 71 71 __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+24 [  71 71 72 __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ ]<br>
+
+
+Here is the plan of attack:
+
+melting_temp_dict[melting_temperature] = [(overlap1, cg_content1), (overlap2, cg_congent2), ... , (overlap-n, cg_conent-n)]
+
+use the melting temperature dict along with minimuma nd maximum cg_overlap information to determine overlap_sets for each
+
+
+
+
 Friday, 1/26/2024
 
 Hello, long time no update. I have began implementing the overlap calculator. Over the last three days, I have gone
