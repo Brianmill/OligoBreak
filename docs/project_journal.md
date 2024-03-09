@@ -1,6 +1,10 @@
 
 
 
+Friday, 3/8/2024:
+
+#ToDo encapsulate the methods into a class to make the method calls less verbose
+
 Monday, 3/4/2024
 
 Propective Algorithm:
