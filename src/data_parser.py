@@ -85,6 +85,7 @@ class protein(NamedTuple):
     name: str
     sequence: str
 
+
 def extract_protein_sequence(protein_seq_file_path: str):
     """Extracts protein and name information from a protein FASTA file.
 
@@ -407,7 +408,6 @@ class overlap_cg_amount_entry(NamedTuple):
 
 
 def print_melting_temp_dict(melting_temp_dict):
-
     # formats the melting_temp_dict in a more readable format
     for temp, data in sorted(melting_temp_dict.items()):
         print(f"{temp: }", end='')
@@ -431,9 +431,9 @@ def generate_global_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg):
 
 
 def generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_overlap):
-    if len(dna_binary_sequence) < max_overlap:
+    if len(dna_binary_sequence) < min_overlap:
         raise ValueError(
-            str(f"Error: max_overlap cannot be greater than DNA length. {max_overlap} > {len(dna_binary_sequence)}"))
+            str(f"Error: min_overlap cannot be greater than DNA length. {min_overlap} > {len(dna_binary_sequence)}"))
     if max_overlap < min_overlap:
         raise ValueError(str(f"Error: max_overlap must be greater than min_overlap. {max_overlap} >! {min_overlap}"))
 
@@ -450,7 +450,13 @@ def generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_ov
             temperature_dict.setdefault(melting_temperature, []).append(overlap_cg_amount_tuple)
     return temperature_dict
 
+
 def generate_melting_temp_dict_array(dna_binary_sequence, min_overlap, max_overlap):
+    sequence_length = len(dna_binary_sequence)
+    for ending_index in range(min_overlap, sequence_length):
+        starting_index = max(ending_index - max_overlap, 0)
+        nucleotide_sequence = dna_binary_sequence[starting_index:ending_index]
+        temperature_dict = generate_sequence_melting_temp_dict(nucleotide_sequence, min_overlap, max_overlap)
     pass
 
 
@@ -465,8 +471,10 @@ def generate_positional_melting_temp_dicts(cg_list, min_temp, max_temp, min_over
         current_min_cg_sequence = min_cg_list[index, index + max_overlap]
         current_max_cg_sequence = max_cg_list[index, index + max_overlap]
 
-        current_minimum_temp_dict = generate_sequence_melting_temp_dict(current_min_cg_sequence, min_overlap, max_overlap)
-        current_minimum_temp_dict = generate_sequence_melting_temp_dict(current_min_cg_sequence, min_overlap, max_overlap)
+        current_minimum_temp_dict = generate_sequence_melting_temp_dict(current_min_cg_sequence, min_overlap,
+                                                                        max_overlap)
+        current_minimum_temp_dict = generate_sequence_melting_temp_dict(current_min_cg_sequence, min_overlap,
+                                                                        max_overlap)
 
         print(current_minimum_temp_dict)
         print(current_minimum_temp_dict)
