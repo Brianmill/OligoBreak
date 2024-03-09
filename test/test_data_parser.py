@@ -284,8 +284,8 @@ class TestDataParserAfterEdit(unittest.TestCase):
         min_overlap = 20
         max_overlap = 40
         cg_dna_binary_sequence = "0010101000100000101000001001001000000000100000000000101000001100000100110101000000101001001001000000100101"
-        sequence_length = len(cg_dna_binary_sequence)
 
+        sequence_length = len(cg_dna_binary_sequence)
         overlap_amount = sequence_length - min_overlap
         overlap_range = max_overlap - min_overlap
         adjustment_factor = (min_overlap * (min_overlap - 1)) / 2
@@ -299,7 +299,8 @@ class TestDataParserAfterEdit(unittest.TestCase):
                 actual_number_of_total_entries = actual_number_of_total_entries + number_of_entries
 
         self.assertEqual(expected_number_of_total_entries,
-                         actual_number_of_total_entries)
+                         actual_number_of_total_entries,
+                         str(f"expected: {expected_number_of_total_entries}, actual: {actual_number_of_total_entries}"))
 
 if __name__ == '__main__':
     cProfile.run("unittest.main()", sort='tottime')

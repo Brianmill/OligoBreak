@@ -452,12 +452,14 @@ def generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_ov
 
 
 def generate_melting_temp_dict_array(dna_binary_sequence, min_overlap, max_overlap):
+    melting_temp_dict_array = []
     sequence_length = len(dna_binary_sequence)
     for ending_index in range(min_overlap, sequence_length):
-        starting_index = max(ending_index - max_overlap, 0)
+        starting_index = max(ending_index - max_overlap + 1, 0)
         nucleotide_sequence = dna_binary_sequence[starting_index:ending_index]
         temperature_dict = generate_sequence_melting_temp_dict(nucleotide_sequence, min_overlap, max_overlap)
-    pass
+        melting_temp_dict_array.append(temperature_dict)
+    return melting_temp_dict_array
 
 
 # attempt at creating an algorithm that generates all data needed to perform dynamic programming
