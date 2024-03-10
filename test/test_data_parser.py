@@ -32,6 +32,24 @@ class TestDataParserBeforeCommit(unittest.TestCase):
                 actual_amino_set,
             )
 
+    def test_multi_amino_to_multi_codon_roundtrip(self):
+        multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_multi_aminos.csv')
+        original_multi_amino_data = extract_multi_amino_data(multiple_amino_file)
+
+        amino_codon_dict_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
+        amino_codon_dict = extract_amino_codon_dict(amino_codon_dict_file)
+
+        multi_codon_data = convert_multi_amino_to_multi_codon_data(original_multi_amino_data, amino_codon_dict)
+        roundtrip_multi_codon_data = convert_multi_codon_to_multi_amino_data(multi_codon_data)
+
+        self.assertCountEqual(
+            original_multi_amino_data,
+            roundtrip_multi_codon_data,
+        )
+
+    # Todo: write test_convert_protein_to_max_cg_dna_binary_sequence function
+    #  Possible tests would be to go in reverse order to check for 'contains'
+
     def test_dna_temperature_calculator(self):
 
         file_path = str(TEST_FILES / 'primer.dat')
@@ -48,6 +66,23 @@ class TestDataParserBeforeCommit(unittest.TestCase):
                 expected_melting_temp,
                 places=1
             )
+
+    def test_extract_degenerate_codons_key(self):
+        degenerate_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
+
+        with open(degenerate_codon_file, 'r') as file:
+            original_degenerate_codon_data = file.read().translate(str.maketrans("", "", string.whitespace))
+
+        extracted_degenerate_codon_data = extract_amino_codon_dict(degenerate_codon_file)
+        # storing the dictionary for use in future tests
+        self.amino_acid_to_codon_dict = extracted_degenerate_codon_data
+        reencoded_degenerate_codon_data = store_amino_codon_dict(extracted_degenerate_codon_data)
+
+        self.assertEqual(
+            original_degenerate_codon_data.strip(),
+            reencoded_degenerate_codon_data.strip(),
+            "Original degenerate codon data does not match re-encoded data."
+        )
 
 
 class TestDataParserAfterEdit(unittest.TestCase):
@@ -84,22 +119,6 @@ class TestDataParserAfterEdit(unittest.TestCase):
             "Original multi-amino data does not match re-encoded data."
         )
 
-    def test_extract_degenerate_codons_key(self):
-        degenerate_codon_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
-
-        with open(degenerate_codon_file, 'r') as file:
-            original_degenerate_codon_data = file.read().translate(str.maketrans("", "", string.whitespace))
-
-        extracted_degenerate_codon_data = extract_amino_codon_dict(degenerate_codon_file)
-        # storing the dictionary for use in future tests
-        self.amino_acid_to_codon_dict = extracted_degenerate_codon_data
-        reencoded_degenerate_codon_data = store_amino_codon_dict(extracted_degenerate_codon_data)
-
-        self.assertEqual(
-            original_degenerate_codon_data.strip(),
-            reencoded_degenerate_codon_data.strip(),
-            "Original degenerate codon data does not match re-encoded data."
-        )
 
     def test_extract_organism_codon_frequencies(self):
         codon_frequencies_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\organisim_codon_frequencies\\human_codon_frequencies.csv'
@@ -132,24 +151,6 @@ class TestDataParserAfterEdit(unittest.TestCase):
             original_protein_sequence,
             roundtrip_protein_sequence,
         )
-
-    def test_multi_amino_to_multi_codon_roundtrip(self):
-        multiple_amino_file = str(TEST_FILES / 'ferredoxin_oxidoreductase_multi_aminos.csv')
-        original_multi_amino_data = extract_multi_amino_data(multiple_amino_file)
-
-        amino_codon_dict_file = 'C:\\Users\\yehud\\Desktop\\py_protein_varient_library\\data\\orgainsim_AA_decodon_sets\\Human.txt'
-        amino_codon_dict = extract_amino_codon_dict(amino_codon_dict_file)
-
-        multi_codon_data = convert_multi_amino_to_multi_codon_data(original_multi_amino_data, amino_codon_dict)
-        roundtrip_multi_codon_data = convert_multi_codon_to_multi_amino_data(multi_codon_data)
-
-        self.assertCountEqual(
-            original_multi_amino_data,
-            roundtrip_multi_codon_data,
-        )
-
-    # Todo: write test_convert_protein_to_max_cg_dna_binary_sequence function
-    #  Possible tests would be to go in reverse order to check for 'contains'
 
     def test_compute_overlap_temperature_dict(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
@@ -208,9 +209,7 @@ class TestDataParserAfterEdit(unittest.TestCase):
         max_overlap = 40
         overlap_dict = generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap)
         expected_number_of_entries = max_overlap - min_overlap + 1
-        actual_number_of_entries = 0
-        for overlap, entry in overlap_dict.items():
-            actual_number_of_entries = actual_number_of_entries + len(entry)
+        actual_number_of_entries = len(overlap_dict)
         self.assertEqual(
             expected_number_of_entries,
             actual_number_of_entries
@@ -246,10 +245,9 @@ class TestDataParserAfterEdit(unittest.TestCase):
 
         actual_cg_amount_array = []
         overlap_dict = generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap)
-        for overlap, cg_temp_tuples in overlap_dict.items():
-            for cg_temp_tuple in cg_temp_tuples:
-                cg_amount = cg_temp_tuple.cg_amount
-                actual_cg_amount_array.append(cg_amount)
+        for overlap, cg_temp_tuple in overlap_dict.items():
+            cg_amount = cg_temp_tuple.cg_amount
+            actual_cg_amount_array.append(cg_amount)
         self.assertCountEqual(
             expected_cg_amount_array,
             actual_cg_amount_array
@@ -257,7 +255,7 @@ class TestDataParserAfterEdit(unittest.TestCase):
 
     # ToDo: Write a test to ensure that the sequence is infact reversed
 
-    def test_generate_melting_temp_dict_array(self):
+    def test_generate_overlap_dict_array(self):
         min_overlap = 20
         max_overlap = 40
         cg_dna_binary_sequence = "0010101000100000101000001001001000000000100000000000101000001100000100110101000000101001001001000000100101"
@@ -268,14 +266,11 @@ class TestDataParserAfterEdit(unittest.TestCase):
         adjustment_factor = (min_overlap * (min_overlap - 1)) / 2
         expected_number_of_total_entries = overlap_amount * overlap_range - adjustment_factor
 
-        overlap_dict_array = generate_melting_temp_dict_array(cg_dna_binary_sequence, min_overlap, max_overlap)
+        overlap_dict_array = generate_overlap_dict_array(cg_dna_binary_sequence, min_overlap, max_overlap)
         actual_number_of_total_entries = 0
-        for overlap_dict in overlap_dict_array:
-            for overlap_length, cg_temp_tuples in overlap_dict.items():
-                number_of_entries = len(cg_temp_tuples)
-                for cg_temp_tuple in cg_temp_tuples:
-                    self.assertTrue(isinstance(cg_temp_tuple, cg_amount_temperature_entry))
-                actual_number_of_total_entries = actual_number_of_total_entries + number_of_entries
+        filtered_overlap_dict_array = [value for value in overlap_dict_array if value is not None]
+        for overlap_dict in filtered_overlap_dict_array:
+            actual_number_of_total_entries = actual_number_of_total_entries + len(overlap_dict)
 
         self.assertEqual(expected_number_of_total_entries,
                          actual_number_of_total_entries,
@@ -289,8 +284,8 @@ class TestDataParserAfterEdit(unittest.TestCase):
 
         max_cg_dna = "0010111010110011111011011011011010011010110010011010111010011110010110110111010010111011011011010011"
         min_cg_dna = "0010101000100000101000001001001000000000100000000000101000001100000100110101000000101001001001000000"
-        max_temp_dict_list = generate_melting_temp_dict_array(max_cg_dna, min_overlap, max_overlap)
-        min_temp_dict_list = generate_melting_temp_dict_array(min_cg_dna, min_overlap, max_overlap)
+        max_temp_dict_list = generate_overlap_dict_array(max_cg_dna, min_overlap, max_overlap)
+        min_temp_dict_list = generate_overlap_dict_array(min_cg_dna, min_overlap, max_overlap)
 
         global_temp_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
 

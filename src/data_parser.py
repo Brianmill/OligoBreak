@@ -401,30 +401,44 @@ def calculate_dna_melting_temp(cg_amount, dna_length):
         return melting_temperature
 
 
-class cg_amount_temperature_entry(NamedTuple):
+class overlap_dict_entry(NamedTuple):
     cg_amount: int
     temperature: int
 
 
-def print_melting_temp_dict(melting_temp_dict):
-    # formats the melting_temp_dict in a more readable format
-    for temp, data in sorted(melting_temp_dict.items()):
-        print(f"{temp: }", end='')
-        for overlap_cg_amount_tuple in data:
-            cg_amount = overlap_cg_amount_tuple.cg_amount
-            overlap_length = overlap_cg_amount_tuple.overlap_length
-            print(f"(cg:{cg_amount}, len:{overlap_length}) ", end="")
-        print()
+class temperature_dict_entry(NamedTuple):
+    cg_amount: int
+    overlap: int
 
 
 def print_overlap_dict(overlap_dict):
     # formats the melting_temp_dict in a more readable format
+    if overlap_dict is None:
+        return
     for overlap, data in sorted(overlap_dict.items()):
         print(f"{overlap: }", end='')
+        if isinstance(data, overlap_dict_entry):
+            data = [data]
         for cg_amount_temp_tuple in data:
             cg_amount = cg_amount_temp_tuple.cg_amount
             temp = cg_amount_temp_tuple.temperature
             print(f"(cg:{cg_amount}, temp:{temp}) ", end="")
+        print()
+
+
+def print_temperature_dict(overlap_dict):
+    # formats the melting_temp_dict in a more readable format
+    for temperature, data in sorted(overlap_dict.items()):
+        print(f"{temperature: }", end='')
+        if isinstance(data, list):
+            for cg_amount_temp_tuple in data:
+                cg_amount = cg_amount_temp_tuple.cg_amount
+                overlap = cg_amount_temp_tuple.overlap
+                print(f"(cg:{cg_amount}, len:{overlap}) ", end="")
+        elif isinstance(data, overlap_dict_entry):
+            cg_amount = data.cg_amount
+            overlap = data.overlap
+            print(f"(cg:{cg_amount}, len:{overlap}) ", end="")
         print()
 
 
@@ -433,7 +447,7 @@ def generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg):
     for overlap_length in range(min_overlap, max_overlap + 1):
         for cg_amount in range(min_cg, max_cg + 1):
             melting_temp = round(calculate_dna_melting_temp(cg_amount, overlap_length))
-            cg_amount_temperature_tuple = cg_amount_temperature_entry(cg_amount=cg_amount, temperature=melting_temp)
+            cg_amount_temperature_tuple = overlap_dict_entry(cg_amount=cg_amount, temperature=melting_temp)
             overlap_dict.setdefault(overlap_length, []).append(cg_amount_temperature_tuple)
     return overlap_dict
 
@@ -454,50 +468,43 @@ def generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_ov
         cg_amount = cg_amount + int(binary_nucleotide)
         if min_overlap <= overlap_length <= max_overlap + 1:
             melting_temperature = round(calculate_dna_melting_temp(cg_amount, overlap_length))
-            cg_amount_temp_tuple = cg_amount_temperature_entry(cg_amount=cg_amount, temperature=melting_temperature)
-            overlap_dict.setdefault(overlap_length, []).append(cg_amount_temp_tuple)
+            cg_amount_temp_tuple = overlap_dict_entry(cg_amount=cg_amount, temperature=melting_temperature)
+            overlap_dict[overlap_length] = cg_amount_temp_tuple
     return overlap_dict
 
 
-def generate_melting_temp_dict_array(dna_binary_sequence, min_overlap, max_overlap):
-    melting_temp_dict_array = []
+def generate_overlap_dict_array(dna_binary_sequence, min_overlap, max_overlap):
+    overlap_dict_array = [None] * len(dna_binary_sequence)
     sequence_length = len(dna_binary_sequence)
     for ending_index in range(min_overlap, sequence_length):
         starting_index = max(ending_index - max_overlap + 1, 0)
         nucleotide_sequence = dna_binary_sequence[starting_index:ending_index]
-        temperature_dict = generate_overlap_dict_from_sequence(nucleotide_sequence, min_overlap, max_overlap)
-        melting_temp_dict_array.append(temperature_dict)
+        overlap_dict = generate_overlap_dict_from_sequence(nucleotide_sequence, min_overlap, max_overlap)
+        overlap_dict_array[ending_index] = overlap_dict
+    return overlap_dict_array
+
+
+def generate_temp_dict_from_overlap_dicts(global_temp_dict, min_overlap_dict, max_overlap_dict):
+    temp_dict = {}
+    for overlap in min_overlap_dict:
+        min_cg_amount = min_overlap_dict[overlap].cg_amount
+        max_cg_amount = max_overlap_dict[overlap].cg_amount
+        global_overlap_list = global_temp_dict[overlap]
+        filtered_overlap_list = global_overlap_list[min_cg_amount:max_cg_amount + 1]
+        for entry in filtered_overlap_list:
+            cg_amount = entry.cg_amount
+            melting_temp = entry.temperature
+            temperature_dict_tuple = temperature_dict_entry(cg_amount=cg_amount, overlap=overlap)
+            temp_dict.setdefault(melting_temp, []).append(temperature_dict_tuple)
+    return temp_dict
+
+
+def generate_filtered_melting_temp_dict_array(global_temp_dict, min_overlap_dict_list, max_overlap_dict_list):
+    melting_temp_dict_array = [None] * len(min_overlap_dict_list)
+    for dict_index, min_overlap_dict in enumerate(min_overlap_dict_list):
+        if min_overlap_dict is None:
+            continue
+        max_overlap_dict = max_overlap_dict_list[dict_index]
+        temp_dict = generate_temp_dict_from_overlap_dicts(global_temp_dict, min_overlap_dict, max_overlap_dict)
+        melting_temp_dict_array[dict_index] = temp_dict
     return melting_temp_dict_array
-
-
-def generate_filtered_melting_temp_dict_array(global_temp_dict, min_temp_dict_list, max_temp_dict_list):
-    print("global_temp_dict:")
-    print_melting_temp_dict(global_temp_dict)
-    for dict_index, min_temp_dict in enumerate(min_temp_dict_list):
-        print("_________________________________")
-        max_temp_dict = max_temp_dict_list[dict_index]
-        print("Min:")
-        print_melting_temp_dict(min_temp_dict)
-        print("Max:")
-        print_melting_temp_dict(max_temp_dict)
-
-
-# attempt at creating an algorithm that generates all data needed to perform dynamic programming
-# def generate_all_melting_temperatures(dna_binary_sequence, min_overlap, max_overlap)
-
-def generate_positional_melting_temp_dicts(cg_list, min_temp, max_temp, min_overlap, max_overlap):
-    # for every temperature
-    #   min_tuple = min_dict[temp]
-    #   max_tuple = max_dict[temp]
-    for index in range(0, len(min_cg_list - 40)):
-        current_min_cg_sequence = min_cg_list[index, index + max_overlap]
-        current_max_cg_sequence = max_cg_list[index, index + max_overlap]
-
-        current_minimum_temp_dict = generate_overlap_dict_from_sequence(current_min_cg_sequence, min_overlap,
-                                                                        max_overlap)
-        current_minimum_temp_dict = generate_overlap_dict_from_sequence(current_min_cg_sequence, min_overlap,
-                                                                        max_overlap)
-
-        print(current_minimum_temp_dict)
-        print(current_minimum_temp_dict)
-    pass
