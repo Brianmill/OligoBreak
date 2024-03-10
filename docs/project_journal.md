@@ -120,8 +120,17 @@ melting_temp_dict[melting_temperature] = [(overlap1, cg_content1), (overlap2, cg
 use the melting temperature dict along with minimuma nd maximum cg_overlap information to determine overlap_sets for each
 
 
+Edit 3/10/2024:
+The problem with this plan of attack is that not all temperatures will be covered by minimum and maximum cg_overlap information.
+What if, instead, I calculate an overlap dict, that stores (melting_temp, cg_content) tuples, in order from lowest cg_content
+to highest cg_content. Then, I can filter this array, dict, only taking the entries in the range (min_cg_content, max_cg_content)
+for each overlap length.
 
-
+function: generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg) -> global_overlap_dict[overlap] = [(min_cg, temp_1), (min_cg + 1, temp_2), ... , (max_cg, temp_n)]
+function: generate_overlap_dict_from_sequence(binary_sequence, min_overlap, max_overlap) -> sequence_overlap_dict[overlap] = (cg_content)
+function: generate_overlap_dict_array(binary_sequence, ....)
+min_temp_overlap_dict = generate_overlap_dict_from_sequence(min_binary_sequence, min_overlap, max_overlap)
+max_temp_overlap_dict = generate_overlap_dict_from_sequence(max_binary_sequence, min_overlap, max_overlap)
 Friday, 1/26/2024
 
 Hello, long time no update. I have began implementing the overlap calculator. Over the last three days, I have gone

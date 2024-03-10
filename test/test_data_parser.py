@@ -55,11 +55,11 @@ class TestDataParserAfterEdit(unittest.TestCase):
     def test_protein_sequence_extraction(self):
         protein_sequence_file = str(TEST_FILES / 'ferredoxin_oxidoreductase.fasta')
 
-        ## getting the original data from the two files
+        # getting the original data from the two files
         with open(protein_sequence_file, 'r') as file:
             original_protein_sequence_data = file.read().replace('\n', '')
 
-        ##running the two files through data extraction and reencoding
+        # running the two files through data extraction and reencoding
         extracted_protein_sequence_data = extract_protein_sequence(protein_sequence_file)
         reencoded_protein_sequence_data = store_protein_sequence(extracted_protein_sequence_data)
 
@@ -168,15 +168,14 @@ class TestDataParserAfterEdit(unittest.TestCase):
         max_overlap = 40
         min_cg = 0
         max_cg = max_overlap
-        cg_overlap_temperature_dict = generate_global_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+        cg_overlap_temperature_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
+        print_overlap_dict(cg_overlap_temperature_dict)
 
-        number_of_tuples_in_dict = 0
-
-        for temperature in cg_overlap_temperature_dict:
-            cg_length_tuples = cg_overlap_temperature_dict[temperature]
-            for cg_length_tuple in cg_length_tuples:
-                cg_amount = cg_length_tuple.cg_amount
-                overlap_length = cg_length_tuple.overlap_length
+        for overlap_length in cg_overlap_temperature_dict:
+            cg_temp_tuples = cg_overlap_temperature_dict[overlap_length]
+            for cg_temp_tuple in cg_temp_tuples:
+                cg_amount = cg_temp_tuple.cg_amount
+                temperature = cg_temp_tuple.temperature
 
                 expected_temperature = round(calculate_dna_melting_temp(cg_amount, overlap_length))
                 self.assertEqual(
@@ -190,11 +189,11 @@ class TestDataParserAfterEdit(unittest.TestCase):
         max_overlap = 40
         min_cg = 0
         max_cg = max_overlap
-        cg_overlap_temperature_dict = generate_global_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+        cg_overlap_temperature_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
 
         number_of_tuples_in_dict = 0
-        for temperature, cg_length_tuples in cg_overlap_temperature_dict.items():
-            number_of_tuples_in_dict = number_of_tuples_in_dict + len(cg_length_tuples)
+        for overlap_length, cg_temp_tuples in cg_overlap_temperature_dict.items():
+            number_of_tuples_in_dict = number_of_tuples_in_dict + len(cg_temp_tuples)
 
         overlap_range = max_overlap - min_overlap + 1
         cg_range = max_cg - min_cg + 1
@@ -214,7 +213,7 @@ class TestDataParserAfterEdit(unittest.TestCase):
         max_overlap = 40
         min_cg = 0
         max_cg = max_overlap
-        cg_overlap_temperature_dict = generate_global_melting_temp_dict(min_overlap, max_overlap, min_cg, max_cg)
+        cg_overlap_temperature_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
         for temperature, cg_length_tuples in cg_overlap_temperature_dict.items():
             for index in range(len(cg_length_tuples) - 1):
                 this_cg_length_tuple = cg_length_tuples[index]
@@ -305,13 +304,20 @@ class TestDataParserAfterEdit(unittest.TestCase):
     def test_generate_filtered_melting_temp_dict_array(self):
         min_overlap = 20
         max_overlap = 40
+        min_cg = 0
+        max_cg = max_overlap
+
         max_cg_dna = "0010111010110011111011011011011010011010110010011010111010011110010110110111010010111011011011010011"
         min_cg_dna = "0010101000100000101000001001001000000000100000000000101000001100000100110101000000101001001001000000"
-        max_temp_array = generate_melting_temp_dict_array(max_cg_dna, min_overlap, max_overlap)
-        min_temp_array = generate_melting_temp_dict_array(min_cg_dna, min_overlap, max_overlap)
-        filtered_melting_temp_dict_array = generate_filtered_melting_temp_dict_array(min_temp_array, max_temp_array, min_overlap, max_overlap)
-        self.assertTrue(False)
+        max_temp_dict_list = generate_melting_temp_dict_array(max_cg_dna, min_overlap, max_overlap)
+        min_temp_dict_list = generate_melting_temp_dict_array(min_cg_dna, min_overlap, max_overlap)
 
+        global_temp_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
+
+        filtered_melting_temp_dict_array = generate_filtered_melting_temp_dict_array(global_temp_dict,
+                                                                                     min_temp_dict_list,
+                                                                                     max_temp_dict_list)
+        self.assertTrue(False)
 
 
 if __name__ == '__main__':
