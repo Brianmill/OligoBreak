@@ -401,11 +401,6 @@ def calculate_dna_melting_temp(cg_amount, dna_length):
         return melting_temperature
 
 
-class overlap_cg_amount_entry(NamedTuple):
-    overlap_length: int
-    cg_amount: int
-
-
 class cg_amount_temperature_entry(NamedTuple):
     cg_amount: int
     temperature: int
@@ -443,7 +438,7 @@ def generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg):
     return overlap_dict
 
 
-def generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_overlap):
+def generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap):
     if len(dna_binary_sequence) < min_overlap:
         raise ValueError(
             str(f"Error: min_overlap cannot be greater than DNA length. {min_overlap} > {len(dna_binary_sequence)}"))
@@ -453,15 +448,15 @@ def generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_ov
     cg_amount = 0
     # sequence is reversed, since overlaps start from the end of the sequence and extend backward
     reversed_sequence = dna_binary_sequence[::-1]
-    temperature_dict = {}
+    overlap_dict = {}
     for dna_index, binary_nucleotide in enumerate(reversed_sequence):
         overlap_length = dna_index + 1
         cg_amount = cg_amount + int(binary_nucleotide)
         if min_overlap <= overlap_length <= max_overlap + 1:
             melting_temperature = round(calculate_dna_melting_temp(cg_amount, overlap_length))
-            overlap_cg_amount_tuple = overlap_cg_amount_entry(overlap_length=overlap_length, cg_amount=cg_amount)
-            temperature_dict.setdefault(melting_temperature, []).append(overlap_cg_amount_tuple)
-    return temperature_dict
+            cg_amount_temp_tuple = cg_amount_temperature_entry(cg_amount=cg_amount, temperature=melting_temperature)
+            overlap_dict.setdefault(overlap_length, []).append(cg_amount_temp_tuple)
+    return overlap_dict
 
 
 def generate_melting_temp_dict_array(dna_binary_sequence, min_overlap, max_overlap):
@@ -470,7 +465,7 @@ def generate_melting_temp_dict_array(dna_binary_sequence, min_overlap, max_overl
     for ending_index in range(min_overlap, sequence_length):
         starting_index = max(ending_index - max_overlap + 1, 0)
         nucleotide_sequence = dna_binary_sequence[starting_index:ending_index]
-        temperature_dict = generate_sequence_melting_temp_dict(nucleotide_sequence, min_overlap, max_overlap)
+        temperature_dict = generate_overlap_dict_from_sequence(nucleotide_sequence, min_overlap, max_overlap)
         melting_temp_dict_array.append(temperature_dict)
     return melting_temp_dict_array
 
@@ -498,9 +493,9 @@ def generate_positional_melting_temp_dicts(cg_list, min_temp, max_temp, min_over
         current_min_cg_sequence = min_cg_list[index, index + max_overlap]
         current_max_cg_sequence = max_cg_list[index, index + max_overlap]
 
-        current_minimum_temp_dict = generate_sequence_melting_temp_dict(current_min_cg_sequence, min_overlap,
+        current_minimum_temp_dict = generate_overlap_dict_from_sequence(current_min_cg_sequence, min_overlap,
                                                                         max_overlap)
-        current_minimum_temp_dict = generate_sequence_melting_temp_dict(current_min_cg_sequence, min_overlap,
+        current_minimum_temp_dict = generate_overlap_dict_from_sequence(current_min_cg_sequence, min_overlap,
                                                                         max_overlap)
 
         print(current_minimum_temp_dict)

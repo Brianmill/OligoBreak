@@ -126,7 +126,7 @@ What if, instead, I calculate an overlap dict, that stores (melting_temp, cg_con
 to highest cg_content. Then, I can filter this array, dict, only taking the entries in the range (min_cg_content, max_cg_content)
 for each overlap length.
 
-function: generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg) -> global_overlap_dict[overlap] = [(min_cg, temp_1), (min_cg + 1, temp_2), ... , (max_cg, temp_n)]
+completed: function: generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg) -> global_overlap_dict[overlap] = [(min_cg, temp_1), (min_cg + 1, temp_2), ... , (max_cg, temp_n)]
 function: generate_overlap_dict_from_sequence(binary_sequence, min_overlap, max_overlap) -> sequence_overlap_dict[overlap] = (cg_content)
 function: generate_overlap_dict_array(binary_sequence, ....)
 min_temp_overlap_dict = generate_overlap_dict_from_sequence(min_binary_sequence, min_overlap, max_overlap)

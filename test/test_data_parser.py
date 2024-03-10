@@ -162,14 +162,13 @@ class TestDataParserAfterEdit(unittest.TestCase):
         # check that the lengths do not exceed the maximum length
         # check that the lengths are not smaller than the minimum length
 
-    def test_generate_temperature_dict(self):
+    def test_generate_overlap_dict(self):
         # makes sure that the calculated and expected temperatures match
         min_overlap = 20
         max_overlap = 40
         min_cg = 0
         max_cg = max_overlap
         cg_overlap_temperature_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
-        print_overlap_dict(cg_overlap_temperature_dict)
 
         for overlap_length in cg_overlap_temperature_dict:
             cg_temp_tuples = cg_overlap_temperature_dict[overlap_length]
@@ -183,7 +182,7 @@ class TestDataParserAfterEdit(unittest.TestCase):
                     temperature
                 )
 
-    def test_generate_temp_dict_entries(self):
+    def test_generate_overlap_dict_entries(self):
         # checks to see if there are the correct number of entries in the temperature dictionary
         min_overlap = 20
         max_overlap = 40
@@ -203,35 +202,35 @@ class TestDataParserAfterEdit(unittest.TestCase):
             number_of_tuples_in_dict
         )
 
-    def test_generate_melting_temp_dict_from_sequence(self):
+    def test_generate_overlap_dict_from_sequence(self):
         dna_binary_sequence = '0100101101010101101010101010100011000010'
         min_overlap = 20
         max_overlap = 40
-        melting_temp_dict = generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_overlap)
+        overlap_dict = generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap)
         expected_number_of_entries = max_overlap - min_overlap + 1
         actual_number_of_entries = 0
-        for temp, entry in melting_temp_dict.items():
+        for overlap, entry in overlap_dict.items():
             actual_number_of_entries = actual_number_of_entries + len(entry)
         self.assertEqual(
             expected_number_of_entries,
             actual_number_of_entries
         )
 
-    def test_generate_melting_temp_dict_from_sequence_with_insufficient_sequence_size(self):
+    def test_generate_overlap_dict_from_sequence_with_insufficient_sequence_size(self):
         dna_binary_sequence = '0100101101010101101'
         min_overlap = 20
         max_overlap = 40
-        self.assertRaises(ValueError, generate_sequence_melting_temp_dict, dna_binary_sequence, min_overlap,
+        self.assertRaises(ValueError, generate_overlap_dict_from_sequence, dna_binary_sequence, min_overlap,
                           max_overlap)
 
-    def test_generate_melting_temp_dict_from_sequence_with_max_overlap_greater_than_min_overlap(self):
+    def test_generate_overlap_dict_from_sequence_with_max_overlap_greater_than_min_overlap(self):
         dna_binary_sequence = '0100101101010101101010101010100011000010'
         min_overlap = 40
         max_overlap = 20
-        self.assertRaises(ValueError, generate_sequence_melting_temp_dict, dna_binary_sequence, min_overlap,
+        self.assertRaises(ValueError, generate_overlap_dict_from_sequence, dna_binary_sequence, min_overlap,
                           max_overlap)
 
-    def test_generate_melting_temp_dict_from_sequence_ensuring_that_sequence_is_reversed(self):
+    def test_generate_overlap_dict_from_sequence_ensuring_that_sequence_is_reversed(self):
         dna_binary_sequence = '0100101101010101101010101010100011000010'
         min_overlap = 20
         max_overlap = 40
@@ -246,10 +245,10 @@ class TestDataParserAfterEdit(unittest.TestCase):
                 expected_cg_amount_array.append(num_cg)
 
         actual_cg_amount_array = []
-        melting_temp_dict = generate_sequence_melting_temp_dict(dna_binary_sequence, min_overlap, max_overlap)
-        for melting_temp, cg_overlap_tuples in melting_temp_dict.items():
-            for cg_overlap_tuple in cg_overlap_tuples:
-                cg_amount = cg_overlap_tuple.cg_amount
+        overlap_dict = generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap)
+        for overlap, cg_temp_tuples in overlap_dict.items():
+            for cg_temp_tuple in cg_temp_tuples:
+                cg_amount = cg_temp_tuple.cg_amount
                 actual_cg_amount_array.append(cg_amount)
         self.assertCountEqual(
             expected_cg_amount_array,
@@ -269,11 +268,13 @@ class TestDataParserAfterEdit(unittest.TestCase):
         adjustment_factor = (min_overlap * (min_overlap - 1)) / 2
         expected_number_of_total_entries = overlap_amount * overlap_range - adjustment_factor
 
-        melting_temp_dict_array = generate_melting_temp_dict_array(cg_dna_binary_sequence, min_overlap, max_overlap)
+        overlap_dict_array = generate_melting_temp_dict_array(cg_dna_binary_sequence, min_overlap, max_overlap)
         actual_number_of_total_entries = 0
-        for melting_temp_dict in melting_temp_dict_array:
-            for melting_temp, cg_overlap_tuples in melting_temp_dict.items():
-                number_of_entries = len(cg_overlap_tuples)
+        for overlap_dict in overlap_dict_array:
+            for overlap_length, cg_temp_tuples in overlap_dict.items():
+                number_of_entries = len(cg_temp_tuples)
+                for cg_temp_tuple in cg_temp_tuples:
+                    self.assertTrue(isinstance(cg_temp_tuple, cg_amount_temperature_entry))
                 actual_number_of_total_entries = actual_number_of_total_entries + number_of_entries
 
         self.assertEqual(expected_number_of_total_entries,
