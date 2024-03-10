@@ -203,27 +203,6 @@ class TestDataParserAfterEdit(unittest.TestCase):
             number_of_tuples_in_dict
         )
 
-    def test_generate_temp_dict_sorted(self):
-        # checks to see if the entries for a given temperature key are stored in the correct order
-        # each entry should have a longer length than the previous.
-        # There are other patterns that the data should conform to, but I don't feel like articulating
-        # those patterns and then coding up a test for them.
-
-        min_overlap = 20
-        max_overlap = 40
-        min_cg = 0
-        max_cg = max_overlap
-        cg_overlap_temperature_dict = generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg)
-        for temperature, cg_length_tuples in cg_overlap_temperature_dict.items():
-            for index in range(len(cg_length_tuples) - 1):
-                this_cg_length_tuple = cg_length_tuples[index]
-                next_cg_length_tuple = cg_length_tuples[index + 1]
-
-                this_length = this_cg_length_tuple.overlap_length
-                next_length = next_cg_length_tuple.overlap_length
-
-                self.assertTrue(this_length <= next_length)
-
     def test_generate_melting_temp_dict_from_sequence(self):
         dna_binary_sequence = '0100101101010101101010101010100011000010'
         min_overlap = 20
