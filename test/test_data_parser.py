@@ -302,5 +302,17 @@ class TestDataParserAfterEdit(unittest.TestCase):
                          actual_number_of_total_entries,
                          str(f"expected: {expected_number_of_total_entries}, actual: {actual_number_of_total_entries}"))
 
+    def test_generate_filtered_melting_temp_dict_array(self):
+        min_overlap = 20
+        max_overlap = 40
+        max_cg_dna = "0010111010110011111011011011011010011010110010011010111010011110010110110111010010111011011011010011"
+        min_cg_dna = "0010101000100000101000001001001000000000100000000000101000001100000100110101000000101001001001000000"
+        max_temp_array = generate_melting_temp_dict_array(max_cg_dna, min_overlap, max_overlap)
+        min_temp_array = generate_melting_temp_dict_array(min_cg_dna, min_overlap, max_overlap)
+        filtered_melting_temp_dict_array = generate_filtered_melting_temp_dict_array(min_temp_array, max_temp_array, min_overlap, max_overlap)
+        self.assertTrue(False)
+
+
+
 if __name__ == '__main__':
     cProfile.run("unittest.main()", sort='tottime')

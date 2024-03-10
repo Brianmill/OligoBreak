@@ -462,6 +462,10 @@ def generate_melting_temp_dict_array(dna_binary_sequence, min_overlap, max_overl
     return melting_temp_dict_array
 
 
+def generate_filtered_melting_temp_dict_array(min_dictionary_list, max_dictionary_list, min_overlap, max_overlap):
+    pass
+
+
 # attempt at creating an algorithm that generates all data needed to perform dynamic programming
 # def generate_all_melting_temperatures(dna_binary_sequence, min_overlap, max_overlap)
 
