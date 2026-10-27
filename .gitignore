@@ -1,0 +1,10 @@
+src/test_file.py
+src/test_data_creater.py
+src/primer.dat
+src/venv
+src/oligo_output.fasta
+/docs/project_journal.md
+**/.DS_Store
+**/._.DS_Store
+**/.vscode
+src/__pycache__
