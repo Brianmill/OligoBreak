@@ -1,10 +1,7 @@
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-import itertools
-import numpy as np
-from math import floor
 import random
+import itertools
 import sys
+from math import floor
 from typing import NamedTuple
 
 CODON_TABLE = {
@@ -57,11 +54,13 @@ CODON_WITH_HIGHEST_CG_CONTENT = {
     'K': '001', 'L': '101', 'M': '001', 'N': '001',
     'P': '111', 'Q': '101', 'R': '111', 'S': '011',
     'T': '011', 'V': '101', 'W': '011', 'Y': '001',
-    # * can be coded as 010, but this does not matter much, since it is a stop codon after all
+    # The stop codon can be coded as 010.
+    # This has little impact because it is a stop codon.
     '*': '001',
 }
 
-# a dictionary that maps ambiguous DNA nucleotides to unambiguous DNA nucleotides
+# Mapping from ambiguous DNA nucleotides
+# to unambiguous DNA nucleotides.
 AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP = {
     'A': {'A'},
     'C': {'C'},
@@ -80,14 +79,338 @@ AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP = {
     'N': {'A', 'T', 'C', 'G'}
 }
 
-
 class protein(NamedTuple):
     name: str
     sequence: str
 
+def parse_arguments():
+    """
+    Parse command-line arguments and load the referenced input data.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the protein record, organism codon-frequency
+        dictionary, amino-acid-to-codon dictionary, multi-amino dictionary,
+        output path, minimum and maximum oligo lengths, minimum and maximum
+        temperatures, maximum temperature difference, and cost per base.
+    """
+    args = sys.argv
+
+    if len(args) < 6:
+        raise ValueError("Not enough arguments provided")
+
+    protein_sequence = args[1]
+    organism_codon_frequency = args[2]
+    amino_codon_data = args[3]
+    multi_amino_data = args[4]
+    oligo_output = args[5]
+
+    min_oligo_len = None
+    max_oligo_len = None
+    min_temp = None
+    max_temp = None
+    max_temp_diff = None
+    cost_per_base = None
+
+    i = 6
+    while i < len(args):
+        if args[i] == "-nl":
+            min_oligo_len = int(args[i + 1])
+            i += 2
+        elif args[i] == "-xl":
+            max_oligo_len = int(args[i + 1])
+            i += 2
+        elif args[i] == "-nt":
+            min_temp = int(args[i + 1])
+            i += 2
+        elif args[i] == "-xt":
+            max_temp = int(args[i + 1])
+            i += 2
+        elif args[i] == "-d":
+            max_temp_diff = int(args[i + 1])
+            i += 2
+        elif args[i] == "-c":
+            cost_per_base = float(args[i + 1])
+            i += 2
+        else:
+            raise ValueError(f"Unknown argument: {args[i]}")
+
+    protein_sequence_file = extract_protein_sequence(protein_sequence)
+    organism_codon_frequency_file = extract_organism_codon_frequencies(organism_codon_frequency)
+    amino_codon_data_file = extract_amino_codon_dict(amino_codon_data)
+    multi_amino_data_file = extract_multi_amino_data(multi_amino_data)
+    oligo_output_file = oligo_output
+
+    return (
+        protein_sequence_file, 
+        organism_codon_frequency_file, 
+        amino_codon_data_file, 
+        multi_amino_data_file, 
+        oligo_output_file, 
+        min_oligo_len, 
+        max_oligo_len, 
+        min_temp, 
+        max_temp, 
+        max_temp_diff, 
+        cost_per_base
+    )
+
+def convert_dna_sequence_to_binary_sequence(dna_seq):
+    """
+    Convert a DNA sequence to binary, using 1 for C/G and 0 for A/T.
+    """
+    binary_seq = ""
+
+    for nucleotide in dna_seq:
+        if nucleotide in ['C', 'G']:
+            binary_seq = binary_seq + "1"
+        else:
+            binary_seq = binary_seq + "0"
+
+    return binary_seq
+
+def calculate_final_order_cost(cost_per_base, oligos, position_degeneracy_dict):
+    """
+    Calculate the total synthesis cost of a segmented DNA sequence.
+
+    Each oligo's base cost is multiplied by the product of degeneracies for
+    amino-acid positions that overlap that oligo.
+    """
+    total_cost = 0
+
+    for oligo in oligos.keys():
+        start, end = oligo
+        oligo_len = end - start + 1
+        oligo_cost = oligo_len * cost_per_base
+
+        oligo_position_degeneracy_set = set()
+
+        for position in position_degeneracy_dict.keys():
+            position = int(position)
+
+            nt_positions = [(position * 3) - 2, (position * 3) - 1, position * 3]
+
+            if any(start <= nt_position <= end and nt_position >= 0 for nt_position in nt_positions):
+                oligo_position_degeneracy_set.add(position_degeneracy_dict[str(position)])
+
+        oligo_degeneracy = 1
+
+        for position_degeneracy in oligo_position_degeneracy_set:
+            oligo_degeneracy = oligo_degeneracy * position_degeneracy
+
+        total_oligo_cost = oligo_cost * oligo_degeneracy
+
+        total_cost += total_oligo_cost
+
+    return total_cost
+
+def write_oligos_to_fasta(dna_sequence, optimal_path_dict, multi_codon_dict, multi_fasta_file):
+    """
+    Write the segmented sequence and its degenerate variants to a FASTA file.
+
+    Returns
+    -------
+    dict
+        Mapping of ``(start, end)`` nucleotide-bound tuples to lists of oligo
+        sequence variants. Bounds use the same coordinates used to write the
+        FASTA headers.
+    """
+    
+    oligos = {}
+
+    for breakpoint, oligo_len in optimal_path_dict.items():
+
+        oligo_start = breakpoint - oligo_len
+        oligo_end = breakpoint
+        base_seq = dna_sequence[oligo_start:oligo_end]
+        oligo_variants = [base_seq]
+
+        for position in multi_codon_dict.keys():
+            position = int(position)
+
+            nt_positions = [(position * 3) - 2, (position * 3) - 1, position * 3]
+
+            if any(oligo_start <= nt_position <= oligo_end for nt_position in nt_positions):
+                multi_codons = multi_codon_dict[str(position)]
+                new_variants = []
+                for seq in oligo_variants:
+
+                    start_idx = nt_positions[0] - oligo_start
+                    end_idx = nt_positions[2] - oligo_start + 1
+
+                    for degen_codon in multi_codons:
+                        new_seq = (seq[:start_idx] + degen_codon + seq[end_idx:])
+
+                        new_variants.append(new_seq)
+
+                oligo_variants = new_variants
+
+        oligos[(oligo_start, oligo_end)] = oligo_variants
+
+    with open(multi_fasta_file, "w") as f:
+        for i, seq in enumerate(oligos.keys(), start=1):
+            start, end = seq
+            oligo = oligos[seq]
+            for oligo_varient in oligo:
+                header = f">oligo_{i}, positions {start}-{end}"
+                f.write(header + "\n")
+                f.write(oligo_varient + "\n")
+
+    return oligos
+
+def get_optimal_path(backtracking_arr, oligo_cost_arr, seq_len):
+    """
+    Reconstruct the lowest-cost oligo path from the backtracking arrays.
+
+    Each backtracking entry stores the previous oligo's index and overlap.
+
+    Returns
+    -------
+    dict
+        Mapping of each oligo's ending sequence position to its length.
+    """
+
+    optimal_path = {}
+
+    optimal_temp = None
+    for temp in backtracking_arr:
+        if backtracking_arr[temp][seq_len - 1] is not None:
+            current_cost = oligo_cost_arr[temp][seq_len - 1]
+            if optimal_temp is None or current_cost < oligo_cost_arr[optimal_temp][seq_len - 1]:
+                optimal_temp = temp
+
+    current_index = len(backtracking_arr[temp]) - 1
+
+    while current_index is not None:
+        if backtracking_arr[optimal_temp][current_index].parent is not None:
+            parent = backtracking_arr[optimal_temp][current_index].parent + 1
+            overlap = backtracking_arr[optimal_temp][current_index].overlap
+        if (parent != current_index + 1):
+            optimal_path[current_index + 1] = current_index - parent + overlap + 1
+        else:
+            optimal_path[current_index + 1] = current_index + 1
+
+        current_index = backtracking_arr[optimal_temp][current_index].parent
+
+    optimal_path = dict(reversed(optimal_path.items()))
+    return optimal_path
+
+def calculate_position_degeneracy(multi_codon_dict):
+    """
+    Create a dictionary that maps each degenerate position to the number
+    of degenerate codons required at the position.
+
+    Returns
+    -------
+    dict
+        Mapping of amino-acid position keys to the number of codons in the
+        corresponding codon set.
+    """
+    position_degeneracy_dict = {}
+
+    position_degeneracy_dict = {
+        position: len(codon_set)
+        for position, codon_set in multi_codon_dict.items()
+    }
+
+    return position_degeneracy_dict
+
+def calculate_position_overlap(dna_binary_sequence, min_temp, max_temp, min_overlap, max_overlap):
+    """
+    Find an overlap length for each sequence position and target temperature.
+
+    Returns
+    -------
+    dict
+        Mapping of integer temperatures to lists indexed by nucleotide
+        position. Each value is the matching overlap length, or None when no
+        permitted overlap reaches that temperature at that position.
+    """
+    sequence_len = len(dna_binary_sequence)
+
+    overlap_dict = {temp: [None] * sequence_len for temp in range(min_temp, max_temp + 1)}
+
+    for temp in range(min_temp, max_temp + 1):
+
+        for dna_index, binary_nucleotide in enumerate(dna_binary_sequence):
+
+            cg_amount = 0
+
+            for overlap_length in range(min_overlap, max_overlap + 1):
+
+                overlap_index = dna_index - overlap_length + 1
+                
+                if overlap_index < 0 or overlap_index >= sequence_len:
+                    break
+            
+                cg_amount += int(dna_binary_sequence[overlap_index])
+
+                melting_temperature = round(
+                    calculate_dna_melting_temp(cg_amount, overlap_length)
+                )
+
+                if melting_temperature == temp:
+                    overlap_dict[temp][dna_index] = overlap_length
+                    break
+
+    return overlap_dict
+
+def calculate_cost(start, end, single_nucleotide_cost, position_degeneracy_dict):
+    """
+    Calculate synthesis cost for an oligo covering nucleotide indices start
+    through end, inclusive.
+
+    Returns None if any degenerate amino-acid position (3-nt codon) would be
+    partially included by the oligo (i.e. some of the 3 nt are inside and some
+    outside). Degenerate positions fully inside the oligo contribute their
+    degeneracy multiplicatively to the oligo cost. Malformed degeneracy values
+    are treated as 1.
+    """
+    if end <= start:
+        return None
+
+    oligo_length = end - start + 1
+    total_cost = oligo_length * single_nucleotide_cost
+
+    position_degeneracy_set = []
+
+    if not position_degeneracy_dict:
+        return total_cost
+
+    for pos_key, degeneracy_val in position_degeneracy_dict.items():
+        try:
+            aa_pos = int(pos_key)
+        except Exception:
+            continue
+
+        nt0 = (aa_pos - 1) * 3
+        nt_positions = (nt0, nt0 + 1, nt0 + 2)
+
+        inside_flags = [start <= nt <= end for nt in nt_positions]
+
+        if not any(inside_flags):
+            continue
+
+        if not all(inside_flags):
+            return None
+
+        try:
+            position_degeneracy_set.append(int(degeneracy_val))
+        except Exception:
+            position_degeneracy_set.append(1)
+
+    total_oligo_degeneracy = 1
+    for position_degeneracy in position_degeneracy_set:
+        total_oligo_degeneracy *= position_degeneracy
+
+    total_cost *= total_oligo_degeneracy
+
+    return total_cost
 
 def extract_protein_sequence(protein_seq_file_path: str):
-    """Extracts protein and name information from a protein FASTA file.
+    """
+    Extract the protein name and sequence from a FASTA file.
 
     Parameters
     ----------
@@ -109,7 +432,8 @@ def extract_protein_sequence(protein_seq_file_path: str):
 
 
 def extract_multi_amino_data(multi_amino_file_path: str):
-    """Extracts multi_amino data and stores them in a set.
+    """
+    Extract multi-amino positions and their amino-acid alternatives.
 
     Multi amino data is locations in the protein sequence where more than one amino
     acid is desired. This is indicated through the use of index, amino list pairs.
@@ -122,7 +446,8 @@ def extract_multi_amino_data(multi_amino_file_path: str):
     Returns
     -------
     multi_amino_data : dict
-        extracted multi amino data. multi_amino_data[position] = (amino_acids)
+        Mapping of position strings to tuples of allowed amino-acid symbols:
+        ``multi_amino_data[position] = (amino_acid, ...)``.
     """
     multi_amino_file = open(multi_amino_file_path, "r")
     multi_amino_data = {}
@@ -136,7 +461,8 @@ def extract_multi_amino_data(multi_amino_file_path: str):
 
 
 def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
-    """Extracts codon frequencies for an organism and stores them in a dictionary
+    """
+    Extract organism codon frequencies into a dictionary.
 
     Parameters
     ----------
@@ -146,8 +472,9 @@ def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
     Returns
     -------
     dict
-        codon frequencies stored as permille (like percent but 1000 instead of 100)
-        codon_per_mille_data[codon] = per_mille
+        Mapping of codon strings to their frequency values as read from the
+        file, stored in permille (per thousand):
+        ``codon_per_mille_data[codon] = per_mille``.
     """
     codon_frequency_file = open(codon_frequencies_file_path, "r")
     codon_per_mille_data = {}
@@ -160,7 +487,8 @@ def extract_organism_codon_frequencies(codon_frequencies_file_path: str):
 
 
 def extract_amino_codon_dict(amino_codon_file_path: str):
-    """ Extracts mappings between amino acid sets and corresponding codon sets.
+    """
+    Extract mappings between amino-acid sets and corresponding codon sets.
 
         Amino_set Codon_set correspondences are derived using the codon genie
         tool. The tool finds the optimal codon set, using ambiguous DNA, that
@@ -175,29 +503,29 @@ def extract_amino_codon_dict(amino_codon_file_path: str):
         Returns
         -------
         dict
-            Extracted amino_set codon_set equivalencies.
-            amino_codon_dict[amino_acid_key] = {
-                'num_codons',
-                'codon_set',
-                'score'
-            }
+            Mapping of 20-character amino-acid binary keys to records with
+            ``num_codons`` (string), ``codon_set`` (ordered tuple of codons),
+            and ``score`` (string):
+            ``amino_codon_dict[key] = {'num_codons': ..., 'codon_set': ..., 'score': ...}``.
+
+    Codon sets are stored as tuples to preserve order in round-trip tests.
     """
     amino_codon_file = open(amino_codon_file_path, "r")
     amino_codon_dict = {}
 
     for line in amino_codon_file:
         num_codons, amino_acid_key, codons, score = line.strip().split('\t')
-        # stored as tuple, since order needs to be conserved to ensure roundtrip test is successful
         codons = tuple(codons.split())
 
-        # Amino acid key has the format of a 20 digit binary number.
-        # i.e. {'V', 'Y', 'T', 'H', 'A'} -> 11010000000100000001
-        # The logic is as follows:
-        # VYWTSPFMKLIHGEQCDNRA   List of amino acids in reverse alphabetical order, according to full name
-        # ||.|.......|.......|
-        # 11010000000100000001
+        """
+        Amino acid key has the format of a 20 digit binary number.
+        i.e. {'V', 'Y', 'T', 'H', 'A'} -> 11010000000100000001
+        The logic is as follows:
+        VYWTSPFMKLIHGEQCDNRA   List of amino acids in reverse alphabetical order, according to full name
+        ||.|.......|.......|
+        11010000000100000001
+        """
 
-        # TODO convert data structure from a set into a namedtuple()
         amino_codon_dict[amino_acid_key] = {
             'num_codons': num_codons,
             'codon_set': codons,
@@ -208,8 +536,9 @@ def extract_amino_codon_dict(amino_codon_file_path: str):
 
 
 def store_protein_sequence(protein_sequence_data) -> str:
-    # Converts protein data back into a String for roundtrip testing purposes
-
+    """
+    Serialize protein name and sequence data for round-trip testing.
+    """
     name = protein_sequence_data.name
     sequence = protein_sequence_data.sequence
     fasta_string = name + sequence
@@ -217,8 +546,9 @@ def store_protein_sequence(protein_sequence_data) -> str:
 
 
 def store_multi_amino_data(multi_amino_data) -> str:
-    # Converts multi amino data back into a String for roundtrip testing purposes
-
+    """
+    Serialize multi-amino position data for round-trip testing.
+    """
     output_string = ''
 
     for index in multi_amino_data:
@@ -229,8 +559,9 @@ def store_multi_amino_data(multi_amino_data) -> str:
 
 
 def store_amino_codon_dict(amino_codon_dict) -> str:
-    # Converts amino_set codon_set correspondences back into a String for roundtrip testing purposes
-
+    """
+    Serialize amino-acid-to-codon mappings for round-trip testing.
+    """
     output_list = []
     for amino_acid_key in amino_codon_dict:
         num_decodons = amino_codon_dict[amino_acid_key]['num_codons']
@@ -242,8 +573,9 @@ def store_amino_codon_dict(amino_codon_dict) -> str:
 
 
 def store_organism_codon_frequencies(codon_per_mille_data) -> str:
-    # Converts codon frequencies back into a String for roundtrip testing purposes
-
+    """
+    Serialize organism codon frequencies for round-trip testing.
+    """
     output_list = []
     for amino_acid in codon_per_mille_data:
         per_mille = codon_per_mille_data[amino_acid]
@@ -252,12 +584,14 @@ def store_organism_codon_frequencies(codon_per_mille_data) -> str:
 
 
 def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
+    """
+    Look up the codon set corresponding to a set of amino acids.
+
+    The amino-acid set is encoded as a binary key in the supplied mapping.
+    """
     if not amino_set:
         return set()
 
-    # Step 1: Convert amino acid into binary representation
-
-    # Note: amino acids are encoded in reverse alphabetical order according to full name
     amino_list = "VYWTSPFMKLIHGEQCDNRA"
     binary_representation = ""
     for index, amino in enumerate(amino_list):
@@ -266,32 +600,35 @@ def convert_amino_set_to_codon_set(amino_set, aminos_to_codons_mapping):
         else:
             binary_representation = binary_representation + "0"
 
-    # Step 2: pass the binary representation into the dictionary to get the codon set
     codon_set = aminos_to_codons_mapping[binary_representation]['codon_set']
     return codon_set
 
 
 def convert_codon_set_to_amino_set(ambiguous_codons):
+    """
+    Expand ambiguous codons and return the amino acids they can encode.
+    """
     amino_set = set()
     for ambiguous_codon in ambiguous_codons:
-        # Step 1: converting the three nucleotides from ambiguous to unambiguous
-        # {'ANK'} -> {'A', 'ATCG', 'GT'}
         unambiguous_nucleotides = (AMBIGUOUS_UNAMBIGUOUS_NUCLEOTIDE_MAP[nucleotide] for nucleotide in ambiguous_codon)
 
-        # Step 2: forming all possible codons through a cartesian product of nucleotides
-        # {'A', 'ATCG', 'GT'} -> {'AAG', 'ATG', 'ACG', 'AGG', 'AAT', 'ATT', 'ACT', 'AGT'}
         unambiguous_codons = (''.join(codon) for codon in itertools.product(*unambiguous_nucleotides))
 
-        # Step 3: translating codons into amino acids
-        # {'AAT', 'ATT', 'ACT', 'AGT'} -> {'K', 'M', 'T', 'R', 'N', 'I', 'S'}
         amino_set.update(set(CODON_TABLE[codon] for codon in unambiguous_codons))
 
     return amino_set
 
 
 def convert_multi_amino_to_multi_codon_data(multi_amino_data, aminos_to_codons_mapping):
-    # converts a list of multi amino positions to a list of multi codon positions
+    """
+    Convert amino-acid alternatives at each position to codon alternatives.
 
+    Returns
+    -------
+    dict
+        Mapping of position keys from ``multi_amino_data`` to sets of
+        corresponding ambiguous codon strings.
+    """
     multi_codon_data = {}
     for position, aminos in multi_amino_data.items():
         codons = convert_amino_set_to_codon_set(aminos, aminos_to_codons_mapping)
@@ -300,17 +637,28 @@ def convert_multi_amino_to_multi_codon_data(multi_amino_data, aminos_to_codons_m
 
 
 def convert_multi_codon_to_multi_amino_data(multi_codon_data):
-    # converts a list of multi codon positions to a list of multi amino positions
+    """
+    Convert codon alternatives at each position to amino-acid alternatives.
 
+    Returns
+    -------
+    dict
+        Mapping of position keys from ``multi_codon_data`` to sets of amino
+        acid symbols encoded by those codons.
+    """
     multi_amino_data = {}
     for position, codons in multi_codon_data.items():
         aminos = convert_codon_set_to_amino_set(codons)
         multi_amino_data[position] = aminos
     return multi_amino_data
 
-
-# TODO refactor function to reduce nesting
 def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies):
+    """
+    Generate a DNA sequence by assigning codons according to organism usage.
+
+    Codons are apportioned by amino-acid frequency, then selected randomly
+    without replacement from each amino acid's allocation.
+    """
     amino_apportionment = apportion_aminos_to_codons(protein_sequence, codon_frequencies)
 
     codon_list = []
@@ -336,8 +684,18 @@ def convert_protein_sequence_to_dna_sequence(protein_sequence, codon_frequencies
 
 
 def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
-    # apportions amino acids to codons based on codon frequencies using the Hamiltonian method of apportionment
-    # The following video was heavily relied on to write the function: https://www.youtube.com/watch?v=YWfEqWLz9pc
+    """
+    Apportion each amino acid across synonymous codons by codon frequency.
+
+    Uses the Hamilton method of apportionment to assign integer codon counts.
+
+    Returns
+    -------
+    dict
+        Mapping of amino-acid symbols to dictionaries mapping synonymous
+        codons to their allocated integer counts:
+        ``codon_allocations[amino_acid][codon] = count``.
+    """
 
     codon_allocations = {}
     for amino_acid in "VYWTSPFMKLIHGEQCDNRA":
@@ -366,6 +724,9 @@ def apportion_aminos_to_codons(protein_sequence, codon_frequencies):
 
 
 def convert_dna_sequence_to_protein_sequence(dna_sequence):
+    """
+    Translate a DNA sequence into its protein sequence.
+    """
     codon_list = [dna_sequence[i:i + 3] for i in range(0, len(dna_sequence), 3)]
     amino_list = [CODON_TABLE[codon] for codon in codon_list]
     protein_sequence = ''.join(amino_list)
@@ -373,21 +734,30 @@ def convert_dna_sequence_to_protein_sequence(dna_sequence):
 
 
 def convert_protein_to_max_cg_dna_binary_sequence(protein_sequence):
-    # outputs a corresponding binary sequence of the DNA sequence with the minimum cg content
+    """
+    Return the binary DNA representation with maximum C/G content.
+    """
     codon_list = [CODON_WITH_HIGHEST_CG_CONTENT[amino] for amino in protein_sequence]
     dna_sequence = ''.join(codon_list)
     return dna_sequence
 
 
 def convert_protein_to_min_cg_dna_binary_sequence(protein_sequence):
-    # outputs a corresponding binary sequence of the DNA sequence with the maximum cg content
+    """
+    Return the binary DNA representation with minimum C/G content.
+    """
     codon_list = [CODON_WITH_LOWEST_CG_CONTENT[amino] for amino in protein_sequence]
     dna_sequence = ''.join(codon_list)
     return dna_sequence
 
 
 def calculate_dna_melting_temp(cg_amount, dna_length):
-    # basic melting temperature equation obtained from http://biotools.nubic.northwestern.edu/OligoCalc.html#helpthermo
+    """
+    Estimate DNA melting temperature from sequence length and C/G count.
+
+    Uses the short-oligo rule below 14 bases and the long-oligo equation for
+    sequences of at least 14 bases.
+    """
     if dna_length < 0:
         raise ValueError("Error: dna length cannot be negative")
     if dna_length == 0:
@@ -399,112 +769,3 @@ def calculate_dna_melting_temp(cg_amount, dna_length):
     if dna_length >= 14:
         melting_temperature = 64.9 + 41 * (cg_amount - 16.4) / dna_length
         return melting_temperature
-
-
-class overlap_dict_entry(NamedTuple):
-    cg_amount: int
-    temperature: int
-
-
-class temperature_dict_entry(NamedTuple):
-    cg_amount: int
-    overlap: int
-
-
-def print_overlap_dict(overlap_dict):
-    # formats the melting_temp_dict in a more readable format
-    if overlap_dict is None:
-        return
-    for overlap, data in sorted(overlap_dict.items()):
-        print(f"{overlap: }", end='')
-        if isinstance(data, overlap_dict_entry):
-            data = [data]
-        for cg_amount_temp_tuple in data:
-            cg_amount = cg_amount_temp_tuple.cg_amount
-            temp = cg_amount_temp_tuple.temperature
-            print(f"(cg:{cg_amount}, temp:{temp}) ", end="")
-        print()
-
-
-def print_temperature_dict(overlap_dict):
-    # formats the melting_temp_dict in a more readable format
-    for temperature, data in sorted(overlap_dict.items()):
-        print(f"{temperature: }", end='')
-        if isinstance(data, list):
-            for cg_amount_temp_tuple in data:
-                cg_amount = cg_amount_temp_tuple.cg_amount
-                overlap = cg_amount_temp_tuple.overlap
-                print(f"(cg:{cg_amount}, len:{overlap}) ", end="")
-        elif isinstance(data, overlap_dict_entry):
-            cg_amount = data.cg_amount
-            overlap = data.overlap
-            print(f"(cg:{cg_amount}, len:{overlap}) ", end="")
-        print()
-
-
-def generate_global_overlap_dict(min_overlap, max_overlap, min_cg, max_cg):
-    overlap_dict = {}
-    for overlap_length in range(min_overlap, max_overlap + 1):
-        for cg_amount in range(min_cg, max_cg + 1):
-            melting_temp = round(calculate_dna_melting_temp(cg_amount, overlap_length))
-            cg_amount_temperature_tuple = overlap_dict_entry(cg_amount=cg_amount, temperature=melting_temp)
-            overlap_dict.setdefault(overlap_length, []).append(cg_amount_temperature_tuple)
-    return overlap_dict
-
-
-def generate_overlap_dict_from_sequence(dna_binary_sequence, min_overlap, max_overlap):
-    if len(dna_binary_sequence) < min_overlap:
-        raise ValueError(
-            str(f"Error: min_overlap cannot be greater than DNA length. {min_overlap} > {len(dna_binary_sequence)}"))
-    if max_overlap < min_overlap:
-        raise ValueError(str(f"Error: max_overlap must be greater than min_overlap. {max_overlap} >! {min_overlap}"))
-
-    cg_amount = 0
-    # sequence is reversed, since overlaps start from the end of the sequence and extend backward
-    reversed_sequence = dna_binary_sequence[::-1]
-    overlap_dict = {}
-    for dna_index, binary_nucleotide in enumerate(reversed_sequence):
-        overlap_length = dna_index + 1
-        cg_amount = cg_amount + int(binary_nucleotide)
-        if min_overlap <= overlap_length <= max_overlap + 1:
-            melting_temperature = round(calculate_dna_melting_temp(cg_amount, overlap_length))
-            cg_amount_temp_tuple = overlap_dict_entry(cg_amount=cg_amount, temperature=melting_temperature)
-            overlap_dict[overlap_length] = cg_amount_temp_tuple
-    return overlap_dict
-
-
-def generate_overlap_dict_array(dna_binary_sequence, min_overlap, max_overlap):
-    overlap_dict_array = [None] * len(dna_binary_sequence)
-    sequence_length = len(dna_binary_sequence)
-    for ending_index in range(min_overlap, sequence_length):
-        starting_index = max(ending_index - max_overlap + 1, 0)
-        nucleotide_sequence = dna_binary_sequence[starting_index:ending_index]
-        overlap_dict = generate_overlap_dict_from_sequence(nucleotide_sequence, min_overlap, max_overlap)
-        overlap_dict_array[ending_index] = overlap_dict
-    return overlap_dict_array
-
-
-def generate_temp_dict_from_overlap_dicts(global_temp_dict, min_overlap_dict, max_overlap_dict):
-    temp_dict = {}
-    for overlap in min_overlap_dict:
-        min_cg_amount = min_overlap_dict[overlap].cg_amount
-        max_cg_amount = max_overlap_dict[overlap].cg_amount
-        global_overlap_list = global_temp_dict[overlap]
-        filtered_overlap_list = global_overlap_list[min_cg_amount:max_cg_amount + 1]
-        for entry in filtered_overlap_list:
-            cg_amount = entry.cg_amount
-            melting_temp = entry.temperature
-            temperature_dict_tuple = temperature_dict_entry(cg_amount=cg_amount, overlap=overlap)
-            temp_dict.setdefault(melting_temp, []).append(temperature_dict_tuple)
-    return temp_dict
-
-
-def generate_filtered_melting_temp_dict_array(global_temp_dict, min_overlap_dict_list, max_overlap_dict_list):
-    melting_temp_dict_array = [None] * len(min_overlap_dict_list)
-    for dict_index, min_overlap_dict in enumerate(min_overlap_dict_list):
-        if min_overlap_dict is None:
-            continue
-        max_overlap_dict = max_overlap_dict_list[dict_index]
-        temp_dict = generate_temp_dict_from_overlap_dicts(global_temp_dict, min_overlap_dict, max_overlap_dict)
-        melting_temp_dict_array[dict_index] = temp_dict
-    return melting_temp_dict_array
